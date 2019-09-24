@@ -16,6 +16,12 @@ Edit your static envoy configuration to load xDS from local files.
 Update local files via configmaps by adding `envoy-xds-configmap-loader` as an init container and a sidecar container of your Envoy pod.
 That's all you need really!
 
+
+## Use-cases
+
+- Turn [stable/envoy](https://github.com/helm/charts/tree/master/stable/envoy) chart into a dynamically configurable API Gateway, Ingress Gateway or Front Proxy
+- Do weighted load-balancing and canary deployments with zero Envoy restart, redeployment and CRD. [Just distributed configmap contents as RDS files!](https://www.envoyproxy.io/learn/incremental-deploys#weighted-load-balancing).
+
 ## What's this?
 
 `envoy-xds-configmap-loader` is an init-container AND a sidecar for your Envoy proxy to use K8s ConfigMaps as xDS backend.
