@@ -1,0 +1,6 @@
+*~
+mytoken
+*.iml
+.git
+.idea
+envoy-configmap-loader
