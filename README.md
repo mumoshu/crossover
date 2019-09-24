@@ -10,12 +10,17 @@ Distribute xDS data via Envoy's official local file config-source but via config
 
 No dependencies other than Go standard library. No need for kubectl or client-go as we rely on the stable v1 configmaps only.
 
-### Simplicity
+### Easy to start
 
 Edit your static envoy configuration to load xDS from local files.
 Update local files via configmaps by adding `envoy-xds-configmap-loader` as an init container and a sidecar container of your Envoy pod.
 That's all you need really!
 
+## Simplicity
+
+No gRPC, REST server or serious K8s controller to maintain and debug!
+
+It's just a simple golang program to HTTP get configmaps, write their contents as local files, and swapping symlinks.
 
 ## Use-cases
 
