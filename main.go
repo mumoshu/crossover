@@ -36,7 +36,11 @@ var (
 )
 
 func main() {
-	flag.StringVar(&namespace, "namespace", os.Getenv("NS"), "the namespace to process.")
+	defaultNs := os.Getenv("NS")
+	if defaultNs == "" {
+		defaultNs = os.Getenv("POD_NAMESPACE")
+	}
+	flag.StringVar(&namespace, "namespace", defaultNs, "the namespace to process.")
 	flag.StringVar(&tokenfile, "token-file", "/var/run/secrets/kubernetes.io/serviceaccount/token", "path to serviceaccount token file")
 	flag.Var(&configmaps, "configmap", "the configmap to process.")
 	flag.BoolVar(&noop, "dry-run", false, "print processed configmaps and secrets and do not submit them to the cluster.")
