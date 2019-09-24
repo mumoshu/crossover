@@ -57,7 +57,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	log.Println("Starting envoy-configmap-loader...")
+	log.Println("Starting envoy-xds-configmap-loader...")
 
 	var wg sync.WaitGroup
 	done := make(chan struct{})

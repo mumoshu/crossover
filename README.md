@@ -1,4 +1,4 @@
-# envoy-configmap-loader
+# envoy-xds-configmap-loader
 
 The minimal and sufficient init/sidecar container to turn Kubernetes configmaps into a xDS server. No gRPC/REST server to maintain.
 
@@ -6,13 +6,13 @@ Distribute xDS data via Envoy's official local file config-source but via config
 
 ## What's this?
 
-`envoy-configmap-loader` is an init-container AND a sidecar for your Envoy proxy to use K8s ConfigMaps as xDS backend.
+`envoy-xds-configmap-loader` is an init-container AND a sidecar for your Envoy proxy to use K8s ConfigMaps as xDS backend.
 
 This works by loading kvs defined within specified configmap(s) and writing files assuming the key is the filename and the value is the content.
 
 You then point your Envoy to read xDS from the directory `/srv/runtime/*.yaml`.
 
-`envoy-configmap-loader` writes files read from configmap(s) into the directory, triggers [symlink swap](https://www.envoyproxy.io/docs/envoy/latest/configuration/operations/runtime#updating-runtime-values-via-symbolic-link-swap)
+`envoy-xds-configmap-loader` writes files read from configmap(s) into the directory, triggers [symlink swap](https://www.envoyproxy.io/docs/envoy/latest/configuration/operations/runtime#updating-runtime-values-via-symbolic-link-swap)
  so that Envoy finally detects and applies changes. 
  
  ## Why not use configmap volumes?
@@ -34,7 +34,7 @@ Watches established.
 /xds/rds.yaml DELETE_SELF
 ```
 
-So in nutshell, `envoy-configmap-loader` is the minimal and sufficient companion to actually distribute xDS via configmaps, without using more advanced CRD-based solutions like Istio and VMWare Contour.
+So in nutshell, `envoy-xds-configmap-loader` is the minimal and sufficient companion to actually distribute xDS via configmaps, without using more advanced CRD-based solutions like Istio and VMWare Contour.
 
 ## Developing
 
@@ -45,5 +45,5 @@ sudo mkdir /srv/runtime
 sudo chmod -R 777 /srv/runtime
 k get secret -o json $(k get secret | grep default-token | awk '{print $1 }') | jq -r .data.token | base64 -D > mytoken
 export APISERVER=$(k config view --minify -o json | jq -r .clusters[0].cluster.server)
-make build && ./envoy-configmap-loader --namespace default --token-file ./mytoken --configmap incendiary-shark-envoy-xds --onetime --insecure
+make build && ./envoy-xds-configmap-loader --namespace default --token-file ./mytoken --configmap incendiary-shark-envoy-xds --onetime --insecure
 ```
