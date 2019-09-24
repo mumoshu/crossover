@@ -4,6 +4,18 @@ The minimal and sufficient init/sidecar container to turn Kubernetes configmaps 
 
 Distribute xDS data via Envoy's official local file config-source but via configmaps. 
 
+## Features
+
+### Zero dependencies
+
+No dependencies other than Go standard library. No need for kubectl or client-go as we rely on the stable v1 configmaps only.
+
+### Simplicity
+
+Edit your static envoy configuration to load xDS from local files.
+Update local files via configmaps by adding `envoy-xds-configmap-loader` as an init container and a sidecar container of your Envoy pod.
+That's all you need really!
+
 ## What's this?
 
 `envoy-xds-configmap-loader` is an init-container AND a sidecar for your Envoy proxy to use K8s ConfigMaps as xDS backend.
