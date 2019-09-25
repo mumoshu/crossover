@@ -68,5 +68,5 @@ sudo mkdir /srv/runtime
 sudo chmod -R 777 /srv/runtime
 k get secret -o json $(k get secret | grep default-token | awk '{print $1 }') | jq -r .data.token | base64 -D > mytoken
 export APISERVER=$(k config view --minify -o json | jq -r .clusters[0].cluster.server)
-make build && ./envoy-xds-configmap-loader --namespace default --token-file ./mytoken --configmap incendiary-shark-envoy-xds --onetime --insecure
+make build && ./envoy-xds-configmap-loader --namespace default --token-file ./mytoken --configmap incendiary-shark-envoy-xds --onetime --insecure --apiserver "http://127.0.0.1:8001"
 ```

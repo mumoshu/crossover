@@ -20,36 +20,40 @@ import (
 	"os"
 )
 
-type TemplateProcessor struct {
+type Loader struct {
 	configMaps map[string]*ConfigMap
 	namespace  string
 	templates  map[string]*ConfigMap
 	noop       bool
 	token      string
 	insecure   bool
+	server     string
 }
 
-func NewTemplateProcessor(namespace, token string, insecure bool) *TemplateProcessor {
-	return &TemplateProcessor{
+type Opts struct {
+	Insecure bool
+	Noop     bool
+	Server   string
+}
+
+func NewLoader(namespace, token string, opts Opts) *Loader {
+	return &Loader{
 		namespace:  namespace,
 		configMaps: make(map[string]*ConfigMap),
 		templates:  make(map[string]*ConfigMap),
 		token:      token,
-		insecure:   insecure,
+		insecure:   opts.Insecure,
+		server:     opts.Server,
+		noop:       opts.Noop,
 	}
 }
 
-func (tp *TemplateProcessor) setNoop(noop bool) {
-	tp.noop = noop
+func process(namespace, token string, configmaps []string, opts Opts) {
+	tp := NewLoader(namespace, token, opts)
+	tp.doLoad(configmaps)
 }
 
-func process(namespace, token string, configmaps []string, noop, insecure bool) {
-	tp := NewTemplateProcessor(namespace, token, insecure)
-	tp.setNoop(noop)
-	tp.sync(configmaps)
-}
-
-func (tp *TemplateProcessor) sync(configmaps []string) {
+func (tp *Loader) doLoad(configmaps []string) {
 	var cms []*ConfigMap
 
 	for _, c := range configmaps {

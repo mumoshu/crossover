@@ -22,7 +22,6 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
-	"os"
 	"time"
 )
 
@@ -41,18 +40,8 @@ type Metadata struct {
 	Annotations map[string]string `json:"annotations,omitempty"`
 }
 
-var server string
-
-func init() {
-	server = os.Getenv("APISERVER")
-
-	if server == "" {
-		server = "http://127.0.0.1:8001"
-	}
-}
-
-func (tp *TemplateProcessor) getConfigMap(namespace, name, token string) (*ConfigMap, error) {
-	u := fmt.Sprintf("%s/api/v1/namespaces/%s/configmaps/%s", server, namespace, name)
+func (tp *Loader) getConfigMap(namespace, name, token string) (*ConfigMap, error) {
+	u := fmt.Sprintf("%s/api/v1/namespaces/%s/configmaps/%s", tp.server, namespace, name)
 	transport := &http.Transport{
 		Proxy: http.ProxyFromEnvironment,
 		DialContext: (&net.Dialer{
@@ -73,13 +62,13 @@ func (tp *TemplateProcessor) getConfigMap(namespace, name, token string) (*Confi
 	}
 	req, err := http.NewRequest("GET", u, nil)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("http get request creation: %v", err)
 	}
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("http get: %v", err)
 	}
 
 	if resp.StatusCode == 404 {
@@ -87,7 +76,7 @@ func (tp *TemplateProcessor) getConfigMap(namespace, name, token string) (*Confi
 	}
 
 	if resp.StatusCode != 200 {
-		return nil, errors.New("non 200 response code")
+		return nil, fmt.Errorf("non 200 response code: %v: %v", resp.StatusCode, req)
 	}
 
 	data, err := ioutil.ReadAll(resp.Body)

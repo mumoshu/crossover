@@ -32,7 +32,8 @@ var (
 	onetime      bool
 	syncInterval time.Duration
 	tokenfile    string
-	insecure bool
+	insecure     bool
+	server       string
 )
 
 func main() {
@@ -42,6 +43,7 @@ func main() {
 	}
 	flag.StringVar(&namespace, "namespace", defaultNs, "the namespace to process.")
 	flag.StringVar(&tokenfile, "token-file", "/var/run/secrets/kubernetes.io/serviceaccount/token", "path to serviceaccount token file")
+	flag.StringVar(&server, "apiserver", "https://kubernetes", "K8s api endpoint")
 	flag.Var(&configmaps, "configmap", "the configmap to process.")
 	flag.BoolVar(&noop, "dry-run", false, "print processed configmaps and secrets and do not submit them to the cluster.")
 	flag.BoolVar(&onetime, "onetime", false, "run one time and exit.")
@@ -56,8 +58,14 @@ func main() {
 
 	token := strings.TrimSpace(string(tokenBytes))
 
+	opts := Opts{
+		Noop:     noop,
+		Insecure: insecure,
+		Server:   server,
+	}
+
 	if onetime {
-		process(namespace, token, configmaps, noop, insecure)
+		process(namespace, token, configmaps, opts)
 		os.Exit(0)
 	}
 
@@ -69,7 +77,7 @@ func main() {
 	go func() {
 		wg.Add(1)
 		for {
-			process(namespace, token, configmaps, noop, insecure)
+			process(namespace, token, configmaps, opts)
 			log.Printf("Syncing templates complete. Next sync in %v seconds.", syncInterval.Seconds())
 			select {
 			case <-time.After(syncInterval):
