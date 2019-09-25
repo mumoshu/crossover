@@ -59,6 +59,49 @@ Watches established.
 
 So in nutshell, `envoy-xds-configmap-loader` is the minimal and sufficient companion to actually distribute xDS via configmaps, without using more advanced CRD-based solutions like Istio and VMWare Contour.
 
+## Getting Started
+
+Try weighted load-balancing using `envoy-xds-configmap-loader`!
+
+Firstly run the loader along with Envoy using the [stable/envoy]() chart:
+
+```
+helm upgrade --install envoy stable/envoy -f example/values.yaml
+```
+
+Then install backends - we use @stefanprodan's awesome [podinfo](https://github.com/stefanprodan/podinfo):
+
+```
+helm repo add flagger https://flagger.app
+helm upgrade --install bold-olm flagger/podinfo --set canary.enabled=false
+helm upgrade --install eerie-octopus flagger/podinfo --set canary.enabled=false
+```
+
+In another terminal, run the tester pod to watch traffic shifts:
+
+```
+kubectl run -it --rm --image alpine:3.9 tester sh
+
+apk add --update curl
+watch curl http://envoy:1000
+```
+
+Finally, try changing load-balancing weights instantly and without restarting Envoy at all:
+
+```
+# 100% bold-olm
+helm upgrade --install envoy stable/envoy -f example/values.yaml \
+  --set services.eerie-octopus-podinfo.weight=0 \
+  --set services.bold-olm-podinfo.weight=100
+
+# 100% eerie-octopus
+helm upgrade --install envoy stable/envoy -f example/values.yaml \
+  --set services.eerie-octopus-podinfo.weight=100 \
+  --set services.bold-olm-podinfo.weight=0
+```
+
+See [example/values.yaml]() for more details on the configuration.
+
 ## Developing
 
 Bring your own K8s cluster, move to the project root, and run the following commands to give it a ride:
