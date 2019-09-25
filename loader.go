@@ -53,22 +53,51 @@ func process(namespace, token string, configmaps []string, opts Opts) {
 	tp.doLoad(configmaps)
 }
 
-func (tp *Loader) doLoad(configmaps []string) {
+func (tp *Loader) doLoad(configmaps []string) error {
 	var cms []*ConfigMap
 
 	for _, c := range configmaps {
-		cm, err := tp.getConfigMap(tp.namespace, c, tp.token)
+		cm, err := tp.getConfigMap(tp.namespace, c)
 		if err != nil {
-			log.Println(err)
+			log.Printf("get configmap %s/%s: %v", tp.namespace, c, err)
 			continue
 		}
 		cms = append(cms, cm)
 	}
 
 	if err := newWriter("").write(cms); err != nil {
-		panic(err)
+		return fmt.Errorf("failed writing %v: %v", cms, err)
 	}
 
+	return nil
+}
+
+func (tp *Loader) doWatch(configmaps []string, done chan struct{}) error {
+	updated := make(chan *ConfigMap)
+
+	for _, c := range configmaps {
+		if err := tp.watchConfigMap(tp.namespace, c, updated); err != nil {
+			return fmt.Errorf("failed to watch %s: %v", c, err)
+		}
+	}
+
+LOOP:
+	for {
+		select {
+		case cm, ok := <-updated:
+			if !ok {
+				break LOOP
+			}
+			log.Printf("watch: %v resourceVersion=%s", cm.ObjectMeta.Name, cm.ObjectMeta.ResourceVersion)
+			if err := newWriter("").write([]*ConfigMap{cm}); err != nil {
+				return err
+			}
+		case <-done:
+			return nil
+		}
+	}
+
+	return nil
 }
 
 func printObject(v interface{}) error {

@@ -26,10 +26,10 @@ func (rf *writer) write(cms []*ConfigMap) error {
 	currentDir := filepath.Join(rf.xdsDir, "current")
 
 	if err := os.MkdirAll(newDir, 0777); err != nil {
-		return err
+		return fmt.Errorf("creating dir %s: %v", newDir, err)
 	}
 	if err := os.MkdirAll(currentDir, 0777); err != nil {
-		return err
+		return fmt.Errorf("creating dir %s: %v", currentDir, err)
 	}
 
 	for _, cm := range cms {
@@ -43,7 +43,7 @@ func (rf *writer) write(cms []*ConfigMap) error {
 			}
 			log.Printf("Moving file to %s", currentFile)
 			if err := os.Rename(newFile, currentFile); err != nil {
-				return fmt.Errorf("failed renaming %s to %s", newDir, currentDir)
+				return fmt.Errorf("failed renaming %s to %s: %v", newFile, currentFile, err)
 			}
 		}
 	}

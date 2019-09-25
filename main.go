@@ -15,6 +15,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -34,6 +35,7 @@ var (
 	tokenfile    string
 	insecure     bool
 	server       string
+	watch        bool
 )
 
 func main() {
@@ -48,12 +50,13 @@ func main() {
 	flag.BoolVar(&noop, "dry-run", false, "print processed configmaps and secrets and do not submit them to the cluster.")
 	flag.BoolVar(&onetime, "onetime", false, "run one time and exit.")
 	flag.BoolVar(&insecure, "insecure", false, "disable tls server verification")
+	flag.BoolVar(&watch, "watch", false, "use watch api to detect changes near realtime")
 	flag.DurationVar(&syncInterval, "sync-interval", (60 * time.Second), "the time duration between template processing.")
 	flag.Parse()
 
 	tokenBytes, err := ioutil.ReadFile(tokenfile)
 	if err != nil {
-		panic(err)
+		fmt.Fprintf(os.Stderr, "reading token: %v\n", err)
 	}
 
 	token := strings.TrimSpace(string(tokenBytes))
@@ -64,8 +67,12 @@ func main() {
 		Server:   server,
 	}
 
+	loader := NewLoader(namespace, token, opts)
+
 	if onetime {
-		process(namespace, token, configmaps, opts)
+		if err := loader.doLoad(configmaps); err != nil {
+			log.Fatalf("%v", err)
+		}
 		os.Exit(0)
 	}
 
@@ -77,7 +84,9 @@ func main() {
 	go func() {
 		wg.Add(1)
 		for {
-			process(namespace, token, configmaps, opts)
+			if err := loader.doLoad(configmaps); err != nil {
+				log.Fatalf("%v", err)
+			}
 			log.Printf("Syncing templates complete. Next sync in %v seconds.", syncInterval.Seconds())
 			select {
 			case <-time.After(syncInterval):
@@ -87,6 +96,16 @@ func main() {
 			}
 		}
 	}()
+
+	if watch {
+		go func() {
+			wg.Add(1)
+			if err := loader.doWatch(configmaps, done); err != nil {
+				log.Fatalf("watch: %v", err)
+			}
+			wg.Done()
+		}()
+	}
 
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)

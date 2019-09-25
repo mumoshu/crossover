@@ -17,14 +17,6 @@ image:
   tag: v1.11.1
   pullPolicy: IfNotPresent
 
-#command:
-#  - /usr/local/bin/envoy
-#args:
-#  - -l
-#  - $loglevel
-#  - -c
-#  - /config/envoy.yaml
-
 command:
 - /bin/sh
 
@@ -32,9 +24,15 @@ argsTemplate: |-
   - -c
   - /docker-entrypoint.sh envoy --service-node ${POD_NAME} --service-cluster {{ template "envoy.fullname" . }} -l debug -c /config/envoy.yaml
 
+xdsLoader:
+  image:
+    repository: mumoshu/envoy-xds-configmap-loader
+    tag: canary-6090275
+  syncInterval: 30s
+
 initContainersTemplate: |-
   - name: xds-init
-    image: mumoshu/envoy-xds-configmap-loader:canary-6090275
+    image: {{ .Values.xdsLoader.image.repository }}:{{ .Values.xdsLoader.image.tag }}
     command:
     - envoy-xds-configmap-loader
     args:
@@ -52,12 +50,13 @@ initContainersTemplate: |-
 
 sidecarContainersTemplate: |-
   - name: xds-update
-    image: mumoshu/envoy-xds-configmap-loader:canary-6090275
+    image: {{ .Values.xdsLoader.image.repository }}:{{ .Values.xdsLoader.image.tag }}
     command:
     - envoy-xds-configmap-loader
     args:
     - --configmap={{ template "envoy.fullname" . }}-xds
-    - --sync-interval=5s
+    - --sync-interval={{ .Values.xdsLoader.syncInterval }}
+    - --watch
     - --insecure
     env:
     - name: POD_NAMESPACE
@@ -166,14 +165,14 @@ readinessProbe:
 securityContext: {}
 
 env:
-- name: POD_NAMESPACE
-  valueFrom:
-    fieldRef:
-      fieldPath: metadata.namespace
-- name: POD_NAME
-  valueFrom:
-    fieldRef:
-      fieldPath: metadata.name
+  POD_NAMESPACE:
+    valueFrom:
+      fieldRef:
+        fieldPath: metadata.namespace
+  POD_NAME:
+    valueFrom:
+      fieldRef:
+        fieldPath: metadata.name
 
 ## Uncomment this section to use helm values to dynamically generate enovy.yaml
 templates:

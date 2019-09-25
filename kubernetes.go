@@ -20,12 +20,18 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net"
 	"net/http"
 	"time"
 )
 
 var ErrNotExist = errors.New("object does not exist")
+
+type WatchEvent struct {
+	Type   string    `json:"type"`
+	Object ConfigMap `json:"object"`
+}
 
 type ConfigMap struct {
 	ApiVersion string            `json:"apiVersion"`
@@ -35,12 +41,13 @@ type ConfigMap struct {
 }
 
 type Metadata struct {
-	Name        string            `json:"name"`
-	Namespace   string            `json:"namespace"`
-	Annotations map[string]string `json:"annotations,omitempty"`
+	Name            string            `json:"name"`
+	Namespace       string            `json:"namespace"`
+	Annotations     map[string]string `json:"annotations,omitempty"`
+	ResourceVersion string            `json:"resourceVersion,omitempty"`
 }
 
-func (tp *Loader) getConfigMap(namespace, name, token string) (*ConfigMap, error) {
+func (tp *Loader) getConfigMap(namespace, name string) (*ConfigMap, error) {
 	u := fmt.Sprintf("%s/api/v1/namespaces/%s/configmaps/%s", tp.server, namespace, name)
 	transport := &http.Transport{
 		Proxy: http.ProxyFromEnvironment,
@@ -64,7 +71,7 @@ func (tp *Loader) getConfigMap(namespace, name, token string) (*ConfigMap, error
 	if err != nil {
 		return nil, fmt.Errorf("http get request creation: %v", err)
 	}
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", tp.token))
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -91,6 +98,71 @@ func (tp *Loader) getConfigMap(namespace, name, token string) (*ConfigMap, error
 	}
 
 	return &cm, nil
+}
+
+// See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.10/#watch-64
+func (tp *Loader) watchConfigMap(namespace, name string, cms chan *ConfigMap) error {
+	u := fmt.Sprintf("%s/api/v1/watch/namespaces/%s/configmaps/%s", tp.server, namespace, name)
+	transport := &http.Transport{
+		Proxy: http.ProxyFromEnvironment,
+		DialContext: (&net.Dialer{
+			Timeout:   30 * time.Second,
+			KeepAlive: 30 * time.Second,
+			DualStack: true,
+		}).DialContext,
+		MaxIdleConns:          100,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: tp.insecure,
+		},
+	}
+	client := &http.Client{
+		Transport: transport,
+	}
+	req, err := http.NewRequest("GET", u, nil)
+	if err != nil {
+		return fmt.Errorf("http get request creation: %v", err)
+	}
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", tp.token))
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("http get: %v", err)
+	}
+
+	done := make(chan struct{})
+
+	go func() {
+		for {
+			evt := WatchEvent{}
+			if err := json.NewDecoder(resp.Body).Decode(&evt); err != nil {
+				close(done)
+				return
+			}
+			cms <- &evt.Object
+		}
+	}()
+
+	go func() {
+		<-done
+
+		if resp.StatusCode == 404 {
+			log.Printf("got 404: %v", ErrNotExist)
+			return
+		}
+
+		if resp.StatusCode != 200 {
+			err := fmt.Errorf("non 200 response code: %v: %v", resp.StatusCode, req)
+			log.Printf("%v", err)
+			return
+		}
+
+		resp.Body.Close()
+	}()
+
+	return nil
 }
 
 func newConfigMap(namespace, name, key, value string) *ConfigMap {

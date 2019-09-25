@@ -83,19 +83,19 @@ In another terminal, run the tester pod to watch traffic shifts:
 kubectl run -it --rm --image alpine:3.9 tester sh
 
 apk add --update curl
-watch curl http://envoy:1000
+watch curl http://envoy:10000
 ```
 
 Finally, try changing load-balancing weights instantly and without restarting Envoy at all:
 
 ```
 # 100% bold-olm
-helm upgrade --install envoy stable/envoy -f example/values.yaml \
+helm upgrade --install envoy ~/charts/stable/envoy -f example/values.yaml \
   --set services.eerie-octopus-podinfo.weight=0 \
   --set services.bold-olm-podinfo.weight=100
 
 # 100% eerie-octopus
-helm upgrade --install envoy stable/envoy -f example/values.yaml \
+helm upgrade --install envoy ~/charts/stable/envoy -f example/values.yaml \
   --set services.eerie-octopus-podinfo.weight=100 \
   --set services.bold-olm-podinfo.weight=0
 ```
