@@ -6,14 +6,12 @@ The minimal and sufficient init/sidecar container to serve xDS files from Kubern
 
 `envoy-xds-configmap-loader` is an implementation of xDS servers that serves such dynamic resources via the filesystem that is updated via Kubernetes configmaps.
 
-Features:
+## Features
 
-- **Minimal dependencies**: No dependencies other than Go standard library
-- **Gradual migration path**: Start with vanilla Envoy with static config. Then turn on dynamic config with envoy-xds-configmap-loader.
+- **Minimal dependencies**
+- **Gradual migration path**
 - **Easy to maintain**: No gRPC/REST server to maintain. Distribute xDS data via Envoy's `local file` config-source.
 - **Completeness**: Access to every feature Envoy provides. `envoy-xds-configmap-loader` makes no leaky abstraction on top.
-
-## Features
 
 ### Minimal dependencies
 
@@ -21,15 +19,19 @@ No dependencies other than Go standard library. No need for kubectl or client-go
 
 ### Gradual migration path / Easy to start
 
+Start with vanilla Envoy with static config. Later, turn on dynamic config with envoy-xds-configmap-loader.
+
 Edit your static envoy configuration to load xDS from local files.
 Update local files via configmaps by adding `envoy-xds-configmap-loader` as an init container and a sidecar container of your Envoy pod.
-That's all you need really!
+That's all you need to get started really!
 
 ### Easy to maintain / Simple to understand
 
-No gRPC, REST server or serious K8s controller to maintain and debug!
+No gRPC, REST server or serious K8s controller to maintain and debug.
 
-It's just a simple golang program to HTTP get configmaps, write their contents as local files, and swapping symlinks.
+`envoy-xds-configmap-loader` a simple golang program to get configmaps via K8s REST API, write their contents as local files, and renaming files to atomically update the files while notifying Envoy about the changes.
+
+From Envoy's perspective, there's just xDS data stored at `/srv/runtime/current/*.yaml` in Envoy containers, that are read from Envoy's `local file` config-source.
 
 ### Feature Complete
 
@@ -84,6 +86,31 @@ Watches established.
 ```
 
 So in nutshell, `envoy-xds-configmap-loader` is the minimal and sufficient companion to actually distribute xDS via configmaps, without using more advanced CRD-based solutions like Istio and VMWare Contour.
+
+## Usage
+
+```console
+$ ./envoy-xds-configmap-loader -h
+Usage of ./envoy-xds-configmap-loader:
+  -apiserver string
+    	K8s api endpoint (default "https://kubernetes")
+  -configmap value
+    	the configmap to process.
+  -dry-run
+    	print processed configmaps and secrets and do not submit them to the cluster.
+  -insecure
+    	disable tls server verification
+  -namespace string
+    	the namespace to process.
+  -onetime
+    	run one time and exit.
+  -sync-interval duration
+    	the time duration between template processing. (default 1m0s)
+  -token-file string
+    	path to serviceaccount token file (default "/var/run/secrets/kubernetes.io/serviceaccount/token")
+  -watch
+    	use watch api to detect changes near realtime
+```
 
 ## Getting Started
 
