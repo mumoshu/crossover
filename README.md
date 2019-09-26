@@ -153,7 +153,7 @@ helm upgrade --install envoy ~/charts/stable/envoy -f example/values.yaml \
   --set services.bold-olm-podinfo.weight=0
 ```
 
-See [example/values.yaml]() for more details on the configuration.
+See [example/values.yaml](example/values.yaml) for more details on the configuration.
 
 ## Developing
 
