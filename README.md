@@ -6,6 +6,8 @@ The minimal and sufficient init/sidecar container to serve xDS files from Kubern
 
 `envoy-xds-configmap-loader` is an implementation of xDS servers that serves such dynamic resources via the filesystem that is updated via Kubernetes configmaps.
 
+[Why not use configmap volumes?](https://github.com/mumoshu/envoy-xds-configmap-loader#why-not-use-configmap-volumes) Because it doesn't apply changes to the local disk in [a way Envoy wants](https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/operations/runtime.html).
+
 ## Features
 
 - **Minimal dependencies**
@@ -85,7 +87,7 @@ Watches established.
 /xds/rds.yaml DELETE_SELF
 ```
 
-So in nutshell, `envoy-xds-configmap-loader` is the minimal and sufficient companion to actually distribute xDS via configmaps, without using more advanced CRD-based solutions like Istio and VMWare Contour.
+So in nutshell, `envoy-xds-configmap-loader` is the minimal and sufficient companion to actually distribute xDS data via configmaps, without using more advanced CRD-based solutions like Istio and VMWare Contour.
 
 ## Usage
 
