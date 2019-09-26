@@ -138,6 +138,21 @@ make build && ./envoy-xds-configmap-loader --namespace default --token-file ./my
 
 ## References
 
+### Technical information to use Envoy's dynamic runtime config via local files
+
 - [File Based Dynamic Configuration of Routes in Envoy Proxy](https://medium.com/grensesnittet/file-based-dynamic-configuration-of-routes-in-envoy-proxy-6234dae968d2)
 - ["How does one atomically change a symlink to a directory in busybox?"](https://unix.stackexchange.com/questions/5093/how-does-one-atomically-change-a-symlink-to-a-directory-in-busybox)
 - [Runtime configuration — envoy](https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/operations/runtime.html)
+
+### Other Envoy xDS implementations
+
+Consul and gRPC server based implementations
+
+- [gojek/consul-envoy-xds](https://github.com/gojek/consul-envoy-xds)
+- [tak2siva/Envoy-Pilot](https://github.com/tak2siva/Envoy-Pilot])
+
+CRD and gRPC server based implementations
+
+- Istio
+- [Contour](https://github.com/projectcontour/contour)
+- [Ambassador](https://github.com/datawire/ambassador)
