@@ -118,7 +118,7 @@ Usage of ./envoy-xds-configmap-loader:
 
 Try weighted load-balancing using `envoy-xds-configmap-loader`!
 
-Firstly run the loader along with Envoy using the [stable/envoy](https://github.com/mumoshu/charts/tree/stable-envoy-improvements) chart:
+Firstly, grab the [fork of the stable/envoy](https://github.com/mumoshu/charts/tree/stable-envoy-improvements) chart until [it is upstreamed](https://github.com/helm/charts/pull/17440):
 
 ```
 # Use the forked chart until it is upstreamed
@@ -128,6 +128,8 @@ git checkout stable-envoy-improvements
 
 popd
 ```
+
+Deploy Envoy along with the loader using the chart:
 
 ```
 helm upgrade --install envoy stable/envoy -f example/values.yaml
