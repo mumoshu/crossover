@@ -2,6 +2,10 @@
 
 The minimal and sufficient init/sidecar container to serve xDS files from Kubernetes configmaps in near real-time.
 
+`Envoy` discovers its various dynamic resources via "the filesystem" or by querying one or more management servers typically called "xDS servers".
+
+`envoy-xds-configmap-loader` is an implementation of xDS servers that serves such dynamic resources via the filesystem that is updated via Kubernetes configmaps.
+
 Features:
 
 - **Minimal dependencies**: No dependencies other than Go standard library
