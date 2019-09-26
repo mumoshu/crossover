@@ -178,6 +178,19 @@ export APISERVER=$(k config view --minify -o json | jq -r .clusters[0].cluster.s
 make build && ./envoy-xds-configmap-loader --namespace default --token-file ./mytoken --configmap incendiary-shark-envoy-xds --onetime --insecure --apiserver "http://127.0.0.1:8001"
 ```
 
+## FAQ
+
+### Why is the init container needed?
+
+`envoy-configmap-loader` needs to be included in your pod not only as a sidecar but also as an init container.
+
+That's because Envoy checks for the existence of xDS-managed config files on startup. That is, if any of xDS-managed config files that are
+referenced from Envoy's bootstrap config is missing on startup, Envoy fails starting.
+
+Once Kubernetes adds [the first-class support for sidecar containers](https://github.com/kubernetes/enhancements/issues/753), the requisite of the init container is likely to go away.
+
+Anyways, `envoy-configmap-loader` is very resource-efficient in terms of image size and memory, it shouldn't be a huge problem.
+
 ## References
 
 ### Technical information to use Envoy's dynamic runtime config via local files
