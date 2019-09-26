@@ -1,31 +1,53 @@
 # envoy-xds-configmap-loader
 
-The minimal and sufficient init/sidecar container to turn Kubernetes configmaps into a xDS server. No gRPC/REST server to maintain.
+The minimal and sufficient init/sidecar container to serve xDS files from Kubernetes configmaps in near real-time.
 
-Distribute xDS data via Envoy's official local file config-source but via configmaps. 
+Features:
+
+- **Minimal dependencies**: No dependencies other than Go standard library
+- **Gradual migration path**: Start with vanilla Envoy with static config. Then turn on dynamic config with envoy-xds-configmap-loader.
+- **Easy to maintain**: No gRPC/REST server to maintain. Distribute xDS data via Envoy's `local file` config-source.
+- **Completeness**: Access to every feature Envoy provides. `envoy-xds-configmap-loader` makes no leaky abstraction on top.
 
 ## Features
 
-### Zero dependencies
+### Minimal dependencies
 
 No dependencies other than Go standard library. No need for kubectl or client-go as we rely on the stable v1 configmaps only.
 
-### Easy to start
+### Gradual migration path / Easy to start
 
 Edit your static envoy configuration to load xDS from local files.
 Update local files via configmaps by adding `envoy-xds-configmap-loader` as an init container and a sidecar container of your Envoy pod.
 That's all you need really!
 
-## Simplicity
+### Easy to maintain / Simple to understand
 
 No gRPC, REST server or serious K8s controller to maintain and debug!
 
 It's just a simple golang program to HTTP get configmaps, write their contents as local files, and swapping symlinks.
 
+### Feature Complete
+
+Access to every feature Envoy provides. `envoy-xds-configmap-loader` makes no leaky abstraction on top of Envoy.
+
 ## Use-cases
 
-- Turn [stable/envoy](https://github.com/helm/charts/tree/master/stable/envoy) chart into a dynamically configurable API Gateway, Ingress Gateway or Front Proxy
-- Do weighted load-balancing and canary deployments with zero Envoy restart, redeployment and CRD. [Just distributed configmap contents as RDS files!](https://www.envoyproxy.io/learn/incremental-deploys#weighted-load-balancing).
+- Ingress Gateway
+- Canary Releases
+- In-Cluster Router/Load-Balancer
+
+### Ingress Gateway
+
+Turn [stable/envoy](https://github.com/helm/charts/tree/master/stable/envoy) chart into a dynamically configurable API Gateway, Ingress Gateway or Front Proxy
+
+### Canary Releases
+
+Do weighted load-balancing and canary deployments with zero Envoy restart, redeployment and CRD. [Just distributed configmap contents as RDS files!](https://www.envoyproxy.io/learn/incremental-deploys#weighted-load-balancing).
+
+### In-Cluster Router/Load-Balancer
+
+Wanna add retries, circuit-breakers, tracing, metrics to your traffic? Deploy Envoy paired with `envoy-xds-configmap-loader` in front of your apps. No need for service meshes from day 1.
 
 ## What's this?
 
@@ -113,3 +135,9 @@ k get secret -o json $(k get secret | grep default-token | awk '{print $1 }') | 
 export APISERVER=$(k config view --minify -o json | jq -r .clusters[0].cluster.server)
 make build && ./envoy-xds-configmap-loader --namespace default --token-file ./mytoken --configmap incendiary-shark-envoy-xds --onetime --insecure --apiserver "http://127.0.0.1:8001"
 ```
+
+## References
+
+- [File Based Dynamic Configuration of Routes in Envoy Proxy](https://medium.com/grensesnittet/file-based-dynamic-configuration-of-routes-in-envoy-proxy-6234dae968d2)
+- ["How does one atomically change a symlink to a directory in busybox?"](https://unix.stackexchange.com/questions/5093/how-does-one-atomically-change-a-symlink-to-a-directory-in-busybox)
+- [Runtime configuration — envoy](https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/operations/runtime.html)
