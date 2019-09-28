@@ -132,7 +132,7 @@ popd
 Deploy Envoy along with the loader using the chart:
 
 ```
-helm upgrade --install envoy stable/envoy -f example/values.yaml
+helm upgrade --install envoy ./charts/envoy -f example/values.yaml
 ```
 
 Then install backends - we use @stefanprodan's awesome [podinfo](https://github.com/stefanprodan/podinfo):
