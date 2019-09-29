@@ -118,21 +118,11 @@ Usage of ./envoy-xds-configmap-loader:
 
 Try weighted load-balancing using `envoy-xds-configmap-loader`!
 
-Firstly, grab the [fork of the stable/envoy](https://github.com/mumoshu/charts/tree/stable-envoy-improvements) chart until [it is upstreamed](https://github.com/helm/charts/pull/17440):
+Deploy Envoy along with the loader using the `stable/envoy` chart:
 
 ```
-# Use the forked chart until it is upstreamed
-git clone https://github.com/mumoshu/charts charts
-pushd $_
-git checkout stable-envoy-improvements
-
-popd
-```
-
-Deploy Envoy along with the loader using the chart:
-
-```
-helm upgrade --install envoy ./charts/envoy -f example/values.yaml
+helm repo add stable https://kubernetes-charts.storage.googleapis.com
+helm upgrade --install envoy stable/envoy -f example/values.yaml
 ```
 
 Then install backends - we use @stefanprodan's awesome [podinfo](https://github.com/stefanprodan/podinfo):
@@ -156,12 +146,12 @@ Finally, try changing load-balancing weights instantly and without restarting En
 
 ```
 # 100% bold-olm
-helm upgrade --install envoy ~/charts/stable/envoy -f example/values.yaml \
+helm upgrade --install envoy stable/envoy -f example/values.yaml \
   --set services.eerie-octopus-podinfo.weight=0 \
   --set services.bold-olm-podinfo.weight=100
 
 # 100% eerie-octopus
-helm upgrade --install envoy ~/charts/stable/envoy -f example/values.yaml \
+helm upgrade --install envoy stable/envoy -f example/values.yaml \
   --set services.eerie-octopus-podinfo.weight=100 \
   --set services.bold-olm-podinfo.weight=0
 ```
