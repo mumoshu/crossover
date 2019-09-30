@@ -51,7 +51,7 @@ Turn [stable/envoy](https://github.com/helm/charts/tree/master/stable/envoy) cha
 
 ### Canary Releases
 
-Do weighted load-balancing and canary deployments with zero Envoy restart, redeployment and CRD. [Just distributed configmap contents as RDS files!](https://www.envoyproxy.io/learn/incremental-deploys#weighted-load-balancing).
+Do weighted load-balancing and canary deployments with zero Envoy restart, redeployment and CRD. [Just distribute RDS(Route Discovery Service) files via configmaps!](https://www.envoyproxy.io/learn/incremental-deploys#weighted-load-balancing).
 
 ### In-Cluster Router/Load-Balancer
 
