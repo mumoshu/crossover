@@ -1,0 +1,70 @@
+version: 2
+jobs:
+  test:
+    machine:
+      image: circleci/classic:201808-01
+    steps:
+    - checkout
+    - run:
+        name: Install Helm
+        environment:
+          HELM_VERSION: v3.0.0-rc.2
+        command: |
+          HELM_FILENAME="helm-${HELM_VERSION}-linux-amd64.tar.gz"
+          curl -Lo ${HELM_FILENAME} "https://get.helm.sh/${HELM_FILENAME}"
+          tar zxf ${HELM_FILENAME} linux-amd64/helm
+          chmod +x linux-amd64/helm
+          sudo mv linux-amd64/helm /usr/local/bin/
+    - run:
+        name: Setup Kubernetes
+        environment:
+          # See https://hub.docker.com/r/kindest/node/tags for available tags(k8s versions)
+          K8S_VERSION: v1.12.10
+          KIND_VERSION: v0.5.1
+        command: |
+          curl -Lo kubectl https://storage.googleapis.com/kubernetes-release/release/${K8S_VERSION}/bin/linux/amd64/kubectl
+          chmod +x kubectl && sudo mv kubectl /usr/local/bin/
+
+          curl -Lo ./kind https://github.com/kubernetes-sigs/kind/releases/download/${KIND_VERSION}/kind-$(uname)-amd64
+          chmod +x ./kind
+          sudo mv ./kind /usr/local/bin/
+
+          kind create cluster --name minikube --image kindest/node:${K8S_VERSION}
+
+          KUBECONFIG="$(kind get kubeconfig-path --name="minikube")"
+
+          echo Copying ${KUBECONFIG} to ~/.kube/config so that it is available to the succeeding steps.
+
+          cp ${KUBECONFIG} ~/.kube/config
+    - run:
+        name: Run tests
+        command: |
+          set -xe
+          helm repo add stable https://kubernetes-charts.storage.googleapis.com
+          helm upgrade --install envoy stable/envoy -f example/values.yaml
+          helm repo add flagger https://flagger.app
+          helm upgrade --install bold-olm flagger/podinfo --set canary.enabled=false
+          helm upgrade --install eerie-octopus flagger/podinfo --set canary.enabled=false
+          kubectl run -it --rm --image alpine:3.9 tester -- sh -c '
+            apk add --update curl
+            watch curl http://envoy:10000
+          ' &
+          pid=$!
+          sleep 10
+          # 100% bold-olm
+          helm upgrade --install envoy stable/envoy -f example/values.yaml \
+            --set services.eerie-octopus-podinfo.weight=0 \
+            --set services.bold-olm-podinfo.weight=100
+          sleep 10
+          # 100% eerie-octopus
+          helm upgrade --install envoy stable/envoy -f example/values.yaml \
+            --set services.eerie-octopus-podinfo.weight=100 \
+            --set services.bold-olm-podinfo.weight=0
+          sleep 10
+          kill $pid
+
+workflows:
+  version: 2
+  test:
+    jobs:
+      - test
