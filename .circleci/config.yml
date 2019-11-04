@@ -6,6 +6,16 @@ jobs:
     steps:
     - checkout
     - run:
+        name: Install testing tools
+        command: |
+          GOBIN=~/bin go get -u github.com/tsenart/vegeta
+          sudo mv ~/bin/vegeta /usr/local/bin/
+          vegeta --version
+
+          GOBIN=~/bin go get -u github.com/rs/jaggr
+          sudo mv ~/bin/jaggr /usr/local/bin/
+          jaggr -version
+    - run:
         name: Install Helm
         environment:
           HELM_VERSION: v3.0.0-rc.2
@@ -47,6 +57,16 @@ jobs:
       image: circleci/classic:201808-01
     steps:
     - checkout
+    - run:
+        name: Install testing tools
+        command: |
+          GOBIN=~/bin go get -u github.com/tsenart/vegeta
+          sudo mv ~/bin/vegeta /usr/local/bin/
+          vegeta --version
+
+          GOBIN=~/bin go get -u github.com/rs/jaggr
+          sudo mv ~/bin/jaggr /usr/local/bin/
+          jaggr -version
     - run:
         name: Install Helm
         environment:
