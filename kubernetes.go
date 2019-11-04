@@ -101,7 +101,7 @@ func (tp *Loader) getConfigMap(namespace, name string) (*ConfigMap, error) {
 }
 
 // See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.10/#watch-64
-func (tp *Loader) watchConfigMap(namespace, name string, cms chan *ConfigMap) error {
+func (tp *Loader) startWatchingConfigMap(stop chan struct{}, namespace, name string, cms chan *ConfigMap) error {
 	u := fmt.Sprintf("%s/api/v1/watch/namespaces/%s/configmaps/%s", tp.server, namespace, name)
 	transport := &http.Transport{
 		Proxy: http.ProxyFromEnvironment,
@@ -121,45 +121,67 @@ func (tp *Loader) watchConfigMap(namespace, name string, cms chan *ConfigMap) er
 	client := &http.Client{
 		Transport: transport,
 	}
-	req, err := http.NewRequest("GET", u, nil)
-	if err != nil {
-		return fmt.Errorf("http get request creation: %v", err)
-	}
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", tp.token))
 
-	resp, err := client.Do(req)
-	if err != nil {
-		return fmt.Errorf("http get: %v", err)
-	}
-
-	done := make(chan struct{})
+	backoff := 5 * time.Second
 
 	go func() {
+
+	WATCHES:
 		for {
-			evt := WatchEvent{}
-			if err := json.NewDecoder(resp.Body).Decode(&evt); err != nil {
-				close(done)
-				return
+			chunks := make(chan *ConfigMap)
+
+			go func() {
+				defer close(chunks)
+
+				log.Printf("Watch starting...")
+
+				req, err := http.NewRequest("GET", u, nil)
+				if err != nil {
+					log.Printf("Watch failed: %v", fmt.Errorf("http get request creation: %v", err))
+					return
+				}
+				req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", tp.token))
+
+				resp, err := client.Do(req)
+				if err != nil {
+					log.Printf("Watch failed: %v", fmt.Errorf("http get: %v", err))
+					return
+				}
+
+				// Read chunks until error or stop
+				for {
+					log.Printf("Watch reading next chunk...")
+					evt := WatchEvent{}
+					if err := json.NewDecoder(resp.Body).Decode(&evt); err != nil {
+						log.Printf("Watch failed: %v", fmt.Errorf("json decode: %v", err))
+						return
+					}
+					chunks <- &evt.Object
+				}
+			}()
+
+		CHUNK_READS:
+			for {
+				select {
+				case _, ok := <-stop:
+					if !ok {
+						break WATCHES
+					}
+				case chunk, ok := <-chunks:
+					if !ok {
+						log.Printf("Watch read all chunks.")
+						break CHUNK_READS
+					}
+					cms <- chunk
+				}
 			}
-			cms <- &evt.Object
-		}
-	}()
 
-	go func() {
-		<-done
-
-		if resp.StatusCode == 404 {
-			log.Printf("got 404: %v", ErrNotExist)
-			return
+			// Prevent busy loop
+			log.Printf("Watch stopped. Retrying in %s", backoff)
+			time.Sleep(backoff)
 		}
 
-		if resp.StatusCode != 200 {
-			err := fmt.Errorf("non 200 response code: %v: %v", resp.StatusCode, req)
-			log.Printf("%v", err)
-			return
-		}
-
-		resp.Body.Close()
+		log.Printf("Watch canceled")
 	}()
 
 	return nil

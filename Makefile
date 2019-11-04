@@ -14,7 +14,7 @@ image/push:
 	docker push mumoshu/envoy-xds-configmap-loader:canary-$(shell git rev-parse --short HEAD)
 
 .PHONY: run/onetime
-rune/onetime: build
+run/onetime: build
 	./envoy-xds-configmap-loader --namespace default --token-file ./mytoken --configmap incendiary-shark-envoy-xds --onetime --insecure --apiserver "https://kubernetes.docker.internal:6443"
 
 .PHONY: run/watch

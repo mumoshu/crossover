@@ -101,8 +101,9 @@ func main() {
 		go func() {
 			wg.Add(1)
 			if err := loader.doWatch(configmaps, done); err != nil {
-				log.Fatalf("watch: %v", err)
+				log.Fatalf("Watch stopped due to error: %v", err)
 			}
+			log.Printf("Watch stopped normally.")
 			wg.Done()
 		}()
 	}

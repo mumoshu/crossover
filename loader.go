@@ -76,7 +76,7 @@ func (tp *Loader) doWatch(configmaps []string, done chan struct{}) error {
 	updated := make(chan *ConfigMap)
 
 	for _, c := range configmaps {
-		if err := tp.watchConfigMap(tp.namespace, c, updated); err != nil {
+		if err := tp.startWatchingConfigMap(done, tp.namespace, c, updated); err != nil {
 			return fmt.Errorf("failed to watch %s: %v", c, err)
 		}
 	}

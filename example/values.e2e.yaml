@@ -27,7 +27,7 @@ argsTemplate: |-
 xdsLoader:
   image:
     repository: mumoshu/envoy-xds-configmap-loader
-    tag: canary-4cb12de
+    tag: canary-15b34ae
   syncInterval: 30s
 
 initContainersTemplate: |-
@@ -216,8 +216,10 @@ templates:
         type: strict_dns
         dns_lookup_family: V4_ONLY
         lb_policy: round_robin
-        {{ if $svc.http2Options -}}
-        http2_protocol_options: {{ $svc.http2Options | toJson }}
+        {{ if $svc.http2_protocol_options -}}
+        http2_protocol_options: {{ $svc.http2_protocol_options | toJson }}
+        {{ else -}}
+        http2_protocol_options: {}
         {{ end -}}
         load_assignment:
           cluster_name: {{ $name | replace "." "_" }}
@@ -233,8 +235,8 @@ templates:
 xds:
   rds.yaml: |-
     version_info: "0"
-    # https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/rds.proto
     resources:
+    # https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/rds.proto
     - "@type": type.googleapis.com/envoy.api.v2.RouteConfiguration
       name: local_route
       # https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/route/route.proto#envoy-api-msg-route-virtualhost
@@ -257,6 +259,15 @@ xds:
               {{ $sum = add $sum $svc.weight }}
               - name: {{ $name | replace "." "_" }}
                 weight: {{ $svc.weight }}
+                {{ if $svc.per_filter_config -}}
+                per_filter_config:
+                  {{ $svc.per_filter_config | toYaml | nindent 14 }}
+                {{ end -}}
+                {{ if $svc.request_headers_to_add -}}
+                # See https://github.com/envoyproxy/envoy/pull/2765
+                request_headers_to_add:
+                  {{ $svc.request_headers_to_add | toYaml | nindent 14 }}
+                {{ end -}}
               {{ end }}
               {{ if ne $sum 100 }}
               {{ fail (printf "%s: %d" "Sum of weights in the weighted_cluster should add up to 100" $sum) }}
@@ -267,9 +278,19 @@ services:
   eerie-octopus-podinfo:
     port: 9898
     weight: 50
+    http2_protocol_options: {}
+    request_headers_to_add:
+    - header:
+        key: x-cluster-id
+        value: "123"
   bold-olm-podinfo:
     port: 9898
     weight: 50
+    http2_protocol_options: {}
+    request_headers_to_add:
+    - header:
+        key: x-cluster-id
+        value: "456"
 
 ## ServiceMonitor consumed by prometheus-operator
 serviceMonitor:
