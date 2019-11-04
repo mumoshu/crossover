@@ -14,7 +14,7 @@ strategy: |
 
 image:
   repository: envoyproxy/envoy
-  tag: v1.11.1
+  tag: v1.12.0
   pullPolicy: IfNotPresent
 
 command:
@@ -27,7 +27,7 @@ argsTemplate: |-
 xdsLoader:
   image:
     repository: mumoshu/envoy-xds-configmap-loader
-    tag: canary-4cb12de
+    tag: canary-b9843b9
   syncInterval: 30s
 
 initContainersTemplate: |-
@@ -203,6 +203,18 @@ templates:
                 config:
                   path: /dev/stdout
               stat_prefix: ingress_http
+              # This needs to be `http2` rather than `auto` if the downstream requires H2C upgrade.
+              # Envoy's `auto` codec_type doesn't support H2C upgrades for the downstream.
+              #
+              # But beware that making this not `auto` disables the H2C upgrades for Envoy, too!
+              # So you can't `curl --http2` to test it anymore. Use `curl --http2-prior-knowledge` instead.
+              #
+              # So in nutshell:
+              #   codec_type: auto -> envoy(h1, h2c-upgrade, h2c-pri), upstream(h2c)
+              #   codec_type: http2 -> envoy(h2c-pri), upstream(h2c)
+              #
+              # The downstream support for H2C upgrades is tracked at https://github.com/envoyproxy/envoy/issues/7161
+              codec_type: {{ .Values.codecType }}
               rds:
                 route_config_name: local_route
                 config_source:
@@ -216,8 +228,8 @@ templates:
         type: strict_dns
         dns_lookup_family: V4_ONLY
         lb_policy: round_robin
-        {{ if $svc.http2Options -}}
-        http2_protocol_options: {{ $svc.http2Options | toJson }}
+        {{ if $svc.http2.enabled -}}
+        http2_protocol_options: {{ default (dict) $svc.http2.protocol_options | toJson }}
         {{ end -}}
         load_assignment:
           cluster_name: {{ $name | replace "." "_" }}
@@ -233,8 +245,8 @@ templates:
 xds:
   rds.yaml: |-
     version_info: "0"
-    # https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/rds.proto
     resources:
+    # https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/rds.proto
     - "@type": type.googleapis.com/envoy.api.v2.RouteConfiguration
       name: local_route
       # https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/route/route.proto#envoy-api-msg-route-virtualhost
@@ -257,19 +269,46 @@ xds:
               {{ $sum = add $sum $svc.weight }}
               - name: {{ $name | replace "." "_" }}
                 weight: {{ $svc.weight }}
+                {{ if $svc.per_filter_config -}}
+                per_filter_config:
+                  {{ $svc.per_filter_config | toYaml | nindent 14 }}
+                {{ end -}}
+                {{ if $svc.request_headers_to_add -}}
+                # See https://github.com/envoyproxy/envoy/pull/2765
+                request_headers_to_add:
+                  {{ $svc.request_headers_to_add | toYaml | nindent 14 }}
+                {{ end -}}
               {{ end }}
               {{ if ne $sum 100 }}
               {{ fail (printf "%s: %d" "Sum of weights in the weighted_cluster should add up to 100" $sum) }}
               {{ end }}
     #eof
 
+# or auto if you want Envoy to serve HTTP/1.1 and H2C upgrades AND the downstream is HTTP/2, H2C
+codecType: auto
+#codecType: http2
+
 services:
   eerie-octopus-podinfo:
     port: 9898
     weight: 50
+    http2:
+      enabled: false
+      protocol_options: {}
+    request_headers_to_add:
+    - header:
+        key: x-cluster-id
+        value: "123"
   bold-olm-podinfo:
     port: 9898
     weight: 50
+    http2:
+      enabled: false
+      protocol_options: {}
+    request_headers_to_add:
+    - header:
+        key: x-cluster-id
+        value: "456"
 
 ## ServiceMonitor consumed by prometheus-operator
 serviceMonitor:
