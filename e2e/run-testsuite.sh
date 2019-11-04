@@ -34,7 +34,7 @@ echo Setting up Envoy front proxy.
 helm repo add stable https://kubernetes-charts.storage.googleapis.com
 helm upgrade --install envoy stable/envoy -f example/values.yaml \
   --set services.eerie-octopus-podinfo.weight=0 \
-  --set services.bold-olm-podinfo.weight=100 ${ENVOY_EXTRA_ARGS} ${HELM_EXTRA_ARGS}
+  --set services.bold-olm-podinfo.weight=100 --wait ${ENVOY_EXTRA_ARGS} ${HELM_EXTRA_ARGS}
 
 echo Starting port-forward.
 
@@ -45,8 +45,8 @@ sleep 5
 echo Setting up podinfo backends.
 
 helm repo add sp https://stefanprodan.github.io/podinfo
-helm upgrade --install bold-olm "${PODINFO_CHART}" ${PODINFO_FLAGS} ${HELM_EXTRA_ARGS}
-helm upgrade --install eerie-octopus "${PODINFO_CHART}" ${PODINFO_FLAGS} ${HELM_EXTRA_ARGS}
+helm upgrade --install bold-olm "${PODINFO_CHART}" --wait ${PODINFO_FLAGS} ${HELM_EXTRA_ARGS}
+helm upgrade --install eerie-octopus "${PODINFO_CHART}" --wait ${PODINFO_FLAGS} ${HELM_EXTRA_ARGS}
 
 sleep 5
 
