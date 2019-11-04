@@ -15,6 +15,12 @@ jobs:
           GOBIN=~/bin go get -u github.com/rs/jaggr
           sudo mv ~/bin/jaggr /usr/local/bin/
           jaggr -version
+
+          # We need a recent jq for @base64d
+          curl -Lo ~/bin/jq https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64
+          chmod +x ~/bin/jq
+          sudo mv ~/bin/jq /usr/local/bin/
+          jq --version
     - run:
         name: Install Helm
         environment:
@@ -67,6 +73,12 @@ jobs:
           GOBIN=~/bin go get -u github.com/rs/jaggr
           sudo mv ~/bin/jaggr /usr/local/bin/
           jaggr -version
+
+          # We need a recent jq for @base64d
+          curl -Lo ~/bin/jq https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64
+          chmod +x ~/bin/jq
+          sudo mv ~/bin/jq /usr/local/bin/
+          jq --version
     - run:
         name: Install Helm
         environment:
