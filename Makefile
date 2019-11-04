@@ -27,8 +27,7 @@ watch:
 
 .PHONY: e2e/h2c
 e2e/h2c:
-	USE_H2C=1 PODINFO_CHART=~/p/podinfo/charts/podinfo ./e2e/run-testsuite.sh
-#	  VEGETA_EXTRA_FLAGS="-http2=true -h2c" RATE=30 TARGET_ADDR=http://localhost:10000/headers DURATION=60s ./load.sh plot
+	USE_H2C=1 ./e2e/run-testsuite.sh
 
 .PHONY: e2e/h1
 e2e/h1:

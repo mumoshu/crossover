@@ -1,5 +1,9 @@
 # envoy-xds-configmap-loader
 
+[![CircleCI](https://circleci.com/gh/mumoshu/envoy-xds-configmap-loader.svg?style=svg)](https://circleci.com/gh/mumoshu/envoy-xds-configmap-loader)
+
+[![dockeri.co](https://dockeri.co/image/mumoshu/envoy-xds-configmap-loader)](https://hub.docker.com/r/mumoshu/envoy-xds-configmap-loader)
+
 The minimal and sufficient init/sidecar container to serve xDS files from Kubernetes configmaps in near real-time.
 
 `Envoy` discovers its various dynamic resources via "the filesystem" or by querying one or more management servers typically called "xDS servers".
