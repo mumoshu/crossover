@@ -53,6 +53,16 @@ jobs:
 
           cp ${KUBECONFIG} ~/.kube/config
     - run:
+        name: Wait for nodes to become ready
+        command: JSONPATH='{range .items[*]}{@.metadata.name}:{range @.status.conditions[*]}{@.type}={@.status};{end}{end}'; until kubectl get nodes -o jsonpath="$JSONPATH" 2>&1 | grep -q "Ready=True"; do sleep 1; done
+    - run:
+        name: Configuring RBAC
+        command: |
+          # Allow xds-configmap-loader to read configmaps in the same namespace.
+          # Otherwise it complains like this and makes envoy pods into crash loops:
+          #   get configmap default/envoy-xds: non 200 response code: 403: &{GET https://kubernetes/api/v1/namespaces/default/configmaps/envoy-xds *snip*
+          kubectl create clusterrolebinding default --clusterrole cluster-admin --serviceaccount default:default
+    - run:
         name: Run tests
         command: |
           make e2e/h2c
@@ -113,6 +123,13 @@ jobs:
     - run:
         name: Wait for nodes to become ready
         command: JSONPATH='{range .items[*]}{@.metadata.name}:{range @.status.conditions[*]}{@.type}={@.status};{end}{end}'; until kubectl get nodes -o jsonpath="$JSONPATH" 2>&1 | grep -q "Ready=True"; do sleep 1; done
+    - run:
+        name: Configuring RBAC
+        command: |
+          # Allow xds-configmap-loader to read configmaps in the same namespace.
+          # Otherwise it complains like this and makes envoy pods into crash loops:
+          #   get configmap default/envoy-xds: non 200 response code: 403: &{GET https://kubernetes/api/v1/namespaces/default/configmaps/envoy-xds *snip*
+          kubectl create clusterrolebinding default --clusterrole cluster-admin --serviceaccount default:default
     - run:
         name: Run tests
         command: |
