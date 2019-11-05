@@ -27,7 +27,7 @@ else
   VEGETA_EXTRA_FLAGS="-http2=false"
 fi
 
-PODINFO_FLAGS="--set image.tag=3.1.3 --set canary.enabled=false ${PODINFO_EXTRA_FLAGS}"
+PODINFO_FLAGS="--set image.tag=3.1.4 --set canary.enabled=false ${PODINFO_EXTRA_FLAGS}"
 
 echo Setting up Envoy front proxy.
 
