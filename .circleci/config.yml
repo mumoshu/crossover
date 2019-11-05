@@ -111,6 +111,9 @@ jobs:
 
           cp ${KUBECONFIG} ~/.kube/config
     - run:
+        name: Wait for nodes to become ready
+        command: JSONPATH='{range .items[*]}{@.metadata.name}:{range @.status.conditions[*]}{@.type}={@.status};{end}{end}'; until kubectl get nodes -o jsonpath="$JSONPATH" 2>&1 | grep -q "Ready=True"; do sleep 1; done
+    - run:
         name: Run tests
         command: |
           make e2e/h1
