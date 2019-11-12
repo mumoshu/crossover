@@ -29,6 +29,14 @@ fi
 
 PODINFO_FLAGS="--set image.tag=3.1.4 --set canary.enabled=false ${PODINFO_EXTRA_FLAGS}"
 
+echo Setting up podinfo backends.
+
+helm repo add sp https://stefanprodan.github.io/podinfo
+helm upgrade --install bold-olm "${PODINFO_CHART}" --wait ${PODINFO_FLAGS} ${HELM_EXTRA_ARGS}
+helm upgrade --install eerie-octopus "${PODINFO_CHART}" --wait ${PODINFO_FLAGS} ${HELM_EXTRA_ARGS}
+
+sleep 5
+
 echo Setting up Envoy front proxy.
 
 helm repo add stable https://kubernetes-charts.storage.googleapis.com
@@ -39,14 +47,6 @@ helm upgrade --install envoy stable/envoy -f example/values.yaml \
 echo Starting port-forward.
 
 kubectl port-forward svc/envoy 10000 > e2e.pf.log &
-
-sleep 5
-
-echo Setting up podinfo backends.
-
-helm repo add sp https://stefanprodan.github.io/podinfo
-helm upgrade --install bold-olm "${PODINFO_CHART}" --wait ${PODINFO_FLAGS} ${HELM_EXTRA_ARGS}
-helm upgrade --install eerie-octopus "${PODINFO_CHART}" --wait ${PODINFO_FLAGS} ${HELM_EXTRA_ARGS}
 
 sleep 5
 
