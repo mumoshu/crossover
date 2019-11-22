@@ -4,44 +4,70 @@
 
 [![dockeri.co](https://dockeri.co/image/mumoshu/envoy-xds-configmap-loader)](https://hub.docker.com/r/mumoshu/envoy-xds-configmap-loader)
 
-The minimal and sufficient init/sidecar container to serve xDS files from Kubernetes configmaps in near real-time.
-
-`Envoy` discovers its various dynamic resources via "the filesystem" or by querying one or more management servers typically called "xDS servers".
-
-`envoy-xds-configmap-loader` is an implementation of xDS servers that serves such dynamic resources via the filesystem that is updated via Kubernetes configmaps.
-
-[Why not use configmap volumes?](https://github.com/mumoshu/envoy-xds-configmap-loader#why-not-use-configmap-volumes) Because it doesn't apply changes to the local disk in [a way Envoy wants](https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/operations/runtime.html).
+**The minimal and sufficient xDS for [Envoy](https://www.envoyproxy.io/)** that helps Canary Deployment, without sacrificing Envoy's rich feature set.
 
 ## Features
 
-- **Minimal dependencies**
-- **Gradual migration path**
-- **Easy to maintain**: No gRPC/REST server to maintain. Distribute xDS data via Envoy's `local file` config-source.
-- **Completeness**: Access to every feature Envoy provides. `envoy-xds-configmap-loader` makes no leaky abstraction on top.
+- **Minimal Dependencies**
+- **Gradual Migration**
+- **Understandable**
+- **Feature Complete**: Access to every feature Envoy provides. `envoy-xds-configmap-loader` makes no leaky abstraction on top.
 
-### Minimal dependencies
+### Minimal Dependencies
 
-No dependencies other than Go standard library. No need for kubectl or client-go as we rely on the stable v1 configmaps only.
+Depends only on the Go standard library and [go-yaml](https://github.com/go-yaml/yaml).
 
-### Gradual migration path / Easy to start
+No need for `kubectl`, `client-go`, `apimachineary` or even Envoy's `go-control-plane`.
 
-Start with vanilla Envoy with static config. Later, turn on dynamic config with envoy-xds-configmap-loader.
+### Gradual Migration
+
+You always start with a standard Envoy without `envoy-xds-configmap-loader`. If you're happy with that, keep using it and don't bother with adding additional moving part to the mix.
+
+Wanna do Canary Deployment with [Flagegr](https://github.com/weaveworks/flagger)?
+
+Got to need dynamically reconfiguring Envoy at runtime without time-consuming and unreliable reloads?
+
+OK - Turn on dynamic config with `envoy-xds-configmap-loader`.
 
 Edit your static envoy configuration to load xDS from local files.
 Update local files via configmaps by adding `envoy-xds-configmap-loader` as an init container and a sidecar container of your Envoy pod.
 That's all you need to get started really!
 
-### Easy to maintain / Simple to understand
+### Understandable
 
 No gRPC, REST server or serious K8s controller to maintain and debug.
 
-`envoy-xds-configmap-loader` a simple golang program to get configmaps via K8s REST API, write their contents as local files, and renaming files to atomically update the files while notifying Envoy about the changes.
+`envoy-xds-configmap-loader` is a simple golang program that feeds only necessary parts of the config to Envoy via xDS.
 
-From Envoy's perspective, there's just xDS data stored at `/srv/runtime/current/*.yaml` in Envoy containers, that are read from Envoy's `local file` config-source.
+It fetches well-known K8s `ConfigMap` and SMI `TrafficSplit` resources via Kubernetes' REST API, write config files for Envoy, rename the files so that Envoy can atomically reconfigure itself.
+
+From Envoy's perspective, there's just xDS data stored at `/srv/runtime/current/*.yaml` visible from within Envoy, that are read from Envoy's standard `local file` config-source.
 
 ### Feature Complete
 
 Access to every feature Envoy provides. `envoy-xds-configmap-loader` makes no leaky abstraction on top of Envoy.
+
+You write regular Envoy config files. `envoy-xds-configmap-loader` just merges and syncs it to Envoy for you. 
+
+## Design
+
+[Envoy](https://www.envoyproxy.io/) is able to reconfigure itself at runtime by reading local files or by querying one or more management servers called xDS servers.
+
+`envoy-xds-configmap-loader` is an implementation of xDS that translates configs stored in Kubernetes to Envoy primitives.
+
+It is an init container and a sidecar container for Envoy, deployed to your Kubernetes cluster along with Envoy, serving xDS.
+
+It continuously reads Kubernetes ConfigMap and [SMI TrafficSplit](https://github.com/deislabs/smi-spec/blob/master/traffic-split.md) resources, to generate and feed xDS resources to Envoy via the local filesystem.
+
+As it relies solely on the local filesystem to communicate with Envoy, it is transparent to the operator. You don't need any experience in gRPC, which is typically required for managing famous xDS implementations. Just `kubectl exec` into the Envoy pod and `cat` standard Envoy config files generated by the loader to debug. 
+
+Thanks to Envoy's inotify support and Kubernetes' Watch API, any changes made via ConfigMap and TrafficSplit are still recongnizable by Envoy in near real-time.
+
+## Why not...
+
+[Why not use configmap volumes?](https://github.com/mumoshu/envoy-xds-configmap-loader#why-not-use-configmap-volumes) Because it doesn't apply changes to the local disk in [a way Envoy wants](https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/operations/runtime.html).
+
+Why not write a gRPC server that translates SMI resources to xDS resources? Because I don't want to introduce a leaky abstraction.
 
 ## Use-cases
 
@@ -151,13 +177,13 @@ Finally, try changing load-balancing weights instantly and without restarting En
 ```
 # 100% bold-olm
 helm upgrade --install envoy stable/envoy -f example/values.yaml \
-  --set services.eerie-octopus-podinfo.weight=0 \
-  --set services.bold-olm-podinfo.weight=100
+  --set services.podinfo.backends.eerie-octopus-podinfo.weight=0 \
+  --set services.podinfo.backends.bold-olm-podinfo.weight=100
 
 # 100% eerie-octopus
 helm upgrade --install envoy stable/envoy -f example/values.yaml \
-  --set services.eerie-octopus-podinfo.weight=100 \
-  --set services.bold-olm-podinfo.weight=0
+  --set services.podinfo.backends.eerie-octopus-podinfo.weight=100 \
+  --set services.podinfo.backends.bold-olm-podinfo.weight=0
 ```
 
 See [example/values.yaml](example/values.yaml) for more details on the configuration.

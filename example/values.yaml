@@ -27,7 +27,7 @@ argsTemplate: |-
 xdsLoader:
   image:
     repository: mumoshu/envoy-xds-configmap-loader
-    tag: canary-cab9b17
+    tag: canary-d430b00
   syncInterval: 30s
 
 initContainersTemplate: |-
@@ -37,6 +37,11 @@ initContainersTemplate: |-
     - envoy-xds-configmap-loader
     args:
     - --configmap={{ template "envoy.fullname" . }}-xds
+    {{ range $name, $svc := .Values.services -}}
+    {{ if $svc.smi.enabled -}}
+    - --trafficsplit={{ $name }}
+    {{ end -}}
+    {{ end -}}
     - --onetime
     - --insecure
     env:
@@ -55,6 +60,11 @@ sidecarContainersTemplate: |-
     - envoy-xds-configmap-loader
     args:
     - --configmap={{ template "envoy.fullname" . }}-xds
+    {{ range $name, $svc := .Values.services -}}
+    {{ if $svc.smi.enabled -}}
+    - --trafficsplit={{ $name }}
+    {{ end -}}
+    {{ end -}}
     - --sync-interval={{ .Values.xdsLoader.syncInterval }}
     - --watch
     - --insecure
@@ -216,13 +226,14 @@ templates:
               # The downstream support for H2C upgrades is tracked at https://github.com/envoyproxy/envoy/issues/7161
               codec_type: {{ .Values.codecType }}
               rds:
-                route_config_name: local_route
+                route_config_name: {{ .Values.route.name }}
                 config_source:
                   path: /srv/runtime/current/rds.yaml
               http_filters:
               - name: envoy.router
       clusters:
-      {{ range $name, $svc := .Values.services -}}
+      {{ range $_, $service := .Values.services -}}
+      {{ range $name, $svc := $service.backends -}}
       - name: {{ $name | replace "." "_" }}
         connect_timeout: 0.25s
         type: strict_dns
@@ -231,6 +242,9 @@ templates:
         {{ if $svc.http2.enabled -}}
         http2_protocol_options: {{ default (dict) $svc.http2.protocol_options | toJson }}
         {{ end -}}
+        # IMHO this is a must-have when STRICT_DNS is used for SD
+        # https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/cds.proto#envoy-api-field-cluster-drain-connections-on-host-removal
+        drain_connections_on_host_removal: true
         load_assignment:
           cluster_name: {{ $name | replace "." "_" }}
           endpoints:
@@ -240,7 +254,8 @@ templates:
                   socket_address:
                     address: {{ $name }}
                     port_value: {{ $svc.port }}
-      {{ end }}
+      {{ end -}}
+      {{ end -}}
 
 xds:
   rds.yaml: |-
@@ -248,10 +263,11 @@ xds:
     resources:
     # https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/rds.proto
     - "@type": type.googleapis.com/envoy.api.v2.RouteConfiguration
-      name: local_route
+      name: {{ .Values.route.name }}
       # https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/route/route.proto#envoy-api-msg-route-virtualhost
       virtual_hosts:
-      - name: backend
+      {{ range $serviceName, $service := .Values.services -}}
+      - name: {{ $serviceName }}
         domains:
         - "*"
         # https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/route/route.proto#envoy-api-msg-route-route
@@ -265,7 +281,7 @@ xds:
               # https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/route/route.proto#envoy-api-msg-route-weightedcluster-clusterweight
               clusters:
               {{ $sum := 0 }}
-              {{ range $name, $svc := .Values.services -}}
+              {{ range $name, $svc := $service.backends -}}
               {{ $sum = add $sum $svc.weight }}
               - name: {{ $name | replace "." "_" }}
                 weight: {{ $svc.weight }}
@@ -282,33 +298,41 @@ xds:
               {{ if ne $sum 100 }}
               {{ fail (printf "%s: %d" "Sum of weights in the weighted_cluster should add up to 100" $sum) }}
               {{ end }}
+      {{ end -}}
     #eof
 
 # or auto if you want Envoy to serve HTTP/1.1 and H2C upgrades AND the downstream is HTTP/2, H2C
 codecType: auto
 #codecType: http2
 
+route:
+  name: podinfo
+
 services:
-  eerie-octopus-podinfo:
-    port: 9898
-    weight: 50
-    http2:
+  podinfo:
+    smi:
       enabled: false
-      protocol_options: {}
-    request_headers_to_add:
-    - header:
-        key: x-cluster-id
-        value: "123"
-  bold-olm-podinfo:
-    port: 9898
-    weight: 50
-    http2:
-      enabled: false
-      protocol_options: {}
-    request_headers_to_add:
-    - header:
-        key: x-cluster-id
-        value: "456"
+    backends:
+      eerie-octopus-podinfo:
+        port: 9898
+        weight: 50
+        http2:
+          enabled: false
+          protocol_options: {}
+        request_headers_to_add:
+        - header:
+            key: x-cluster-id
+            value: "123"
+      bold-olm-podinfo:
+        port: 9898
+        weight: 50
+        http2:
+          enabled: false
+          protocol_options: {}
+        request_headers_to_add:
+        - header:
+            key: x-cluster-id
+            value: "456"
 
 ## ServiceMonitor consumed by prometheus-operator
 serviceMonitor:
