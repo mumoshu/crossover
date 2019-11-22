@@ -27,7 +27,7 @@ argsTemplate: |-
 xdsLoader:
   image:
     repository: mumoshu/envoy-xds-configmap-loader
-    tag: canary-d430b00
+    tag: canary-78954e4
   syncInterval: 30s
 
 initContainersTemplate: |-
