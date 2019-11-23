@@ -1,17 +1,17 @@
-# envoy-xds-configmap-loader
+# Crossover
 
-[![CircleCI](https://circleci.com/gh/mumoshu/envoy-xds-configmap-loader.svg?style=svg)](https://circleci.com/gh/mumoshu/envoy-xds-configmap-loader)
+[![CircleCI](https://circleci.com/gh/mumoshu/crossover.svg?style=svg)](https://circleci.com/gh/mumoshu/crossover)
 
-[![dockeri.co](https://dockeri.co/image/mumoshu/envoy-xds-configmap-loader)](https://hub.docker.com/r/mumoshu/envoy-xds-configmap-loader)
+[![dockeri.co](https://dockeri.co/image/mumoshu/crossover)](https://hub.docker.com/r/mumoshu/crossover)
 
-**The minimal and sufficient xDS for [Envoy](https://www.envoyproxy.io/)** that helps Canary Deployment, without sacrificing Envoy's rich feature set.
+`Crossover` is **the minimal and sufficient xDS for [Envoy](https://www.envoyproxy.io/)** that helps Canary Deployment, without sacrificing Envoy's rich feature set.
 
 ## Features
 
 - **Minimal Dependencies**
 - **Gradual Migration**
 - **Understandable**
-- **Feature Complete**: Access to every feature Envoy provides. `envoy-xds-configmap-loader` makes no leaky abstraction on top.
+- **Feature Complete**: Access to every feature Envoy provides. `crossover` makes no leaky abstraction on top.
 
 ### Minimal Dependencies
 
@@ -21,23 +21,23 @@ No need for `kubectl`, `client-go`, `apimachineary` or even Envoy's `go-control-
 
 ### Gradual Migration
 
-You always start with a standard Envoy without `envoy-xds-configmap-loader`. If you're happy with that, keep using it and don't bother with adding additional moving part to the mix.
+You always start with a standard Envoy without `crossover`. If you're happy with that, keep using it and don't bother with adding additional moving part to the mix.
 
 Wanna do Canary Deployment with [Flagegr](https://github.com/weaveworks/flagger)?
 
 Got to need dynamically reconfiguring Envoy at runtime without time-consuming and unreliable reloads?
 
-OK - Turn on dynamic config with `envoy-xds-configmap-loader`.
+OK - Turn on dynamic config with `crossover`.
 
 Edit your static envoy configuration to load xDS from local files.
-Update local files via configmaps by adding `envoy-xds-configmap-loader` as an init container and a sidecar container of your Envoy pod.
+Update local files via configmaps by adding `crossover` as an init container and a sidecar container of your Envoy pod.
 That's all you need to get started really!
 
 ### Understandable
 
 No gRPC, REST server or serious K8s controller to maintain and debug.
 
-`envoy-xds-configmap-loader` is a simple golang program that feeds only necessary parts of the config to Envoy via xDS.
+`crossover` is a simple golang program that feeds only necessary parts of the config to Envoy via xDS.
 
 It fetches well-known K8s `ConfigMap` and SMI `TrafficSplit` resources via Kubernetes' REST API, write config files for Envoy, rename the files so that Envoy can atomically reconfigure itself.
 
@@ -45,15 +45,15 @@ From Envoy's perspective, there's just xDS data stored at `/srv/runtime/current/
 
 ### Feature Complete
 
-Access to every feature Envoy provides. `envoy-xds-configmap-loader` makes no leaky abstraction on top of Envoy.
+Access to every feature Envoy provides. `crossover` makes no leaky abstraction on top of Envoy.
 
-You write regular Envoy config files. `envoy-xds-configmap-loader` just merges and syncs it to Envoy for you. 
+You write regular Envoy config files. `crossover` just merges and syncs it to Envoy for you. 
 
 ## Design
 
 [Envoy](https://www.envoyproxy.io/) is able to reconfigure itself at runtime by reading local files or by querying one or more management servers called xDS servers.
 
-`envoy-xds-configmap-loader` is an implementation of xDS that translates configs stored in Kubernetes to Envoy primitives.
+`crossover` is an implementation of xDS that translates configs stored in Kubernetes to Envoy primitives.
 
 It is an init container and a sidecar container for Envoy, deployed to your Kubernetes cluster along with Envoy, serving xDS.
 
@@ -65,7 +65,7 @@ Thanks to Envoy's inotify support and Kubernetes' Watch API, any changes made vi
 
 ## Why not...
 
-[Why not use configmap volumes?](https://github.com/mumoshu/envoy-xds-configmap-loader#why-not-use-configmap-volumes) Because it doesn't apply changes to the local disk in [a way Envoy wants](https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/operations/runtime.html).
+[Why not use configmap volumes?](https://github.com/mumoshu/crossover#why-not-use-configmap-volumes) Because it doesn't apply changes to the local disk in [a way Envoy wants](https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/operations/runtime.html).
 
 Why not write a gRPC server that translates SMI resources to xDS resources? Because I don't want to introduce a leaky abstraction.
 
@@ -85,17 +85,17 @@ Do weighted load-balancing and canary deployments with zero Envoy restart, redep
 
 ### In-Cluster Router/Load-Balancer
 
-Wanna add retries, circuit-breakers, tracing, metrics to your traffic? Deploy Envoy paired with `envoy-xds-configmap-loader` in front of your apps. No need for service meshes from day 1.
+Wanna add retries, circuit-breakers, tracing, metrics to your traffic? Deploy Envoy paired with `crossover` in front of your apps. No need for service meshes from day 1.
 
 ## What's this?
 
-`envoy-xds-configmap-loader` is an init-container AND a sidecar for your Envoy proxy to use K8s ConfigMaps as xDS backend.
+`crossover` is an init-container AND a sidecar for your Envoy proxy to use K8s ConfigMaps as xDS backend.
 
 This works by loading kvs defined within specified configmap(s) and writing files assuming the key is the filename and the value is the content.
 
 You then point your Envoy to read xDS from the directory `/srv/runtime/*.yaml`.
 
-`envoy-xds-configmap-loader` writes files read from configmap(s) into the directory, triggers [symlink swap](https://www.envoyproxy.io/docs/envoy/latest/configuration/operations/runtime#updating-runtime-values-via-symbolic-link-swap)
+`crossover` writes files read from configmap(s) into the directory, triggers [symlink swap](https://www.envoyproxy.io/docs/envoy/latest/configuration/operations/runtime#updating-runtime-values-via-symbolic-link-swap)
  so that Envoy finally detects and applies changes. 
  
  ## Why not use configmap volumes?
@@ -117,13 +117,13 @@ Watches established.
 /xds/rds.yaml DELETE_SELF
 ```
 
-So in nutshell, `envoy-xds-configmap-loader` is the minimal and sufficient companion to actually distribute xDS data via configmaps, without using more advanced CRD-based solutions like Istio and VMWare Contour.
+So in nutshell, `crossover` is the minimal and sufficient companion to actually distribute xDS data via configmaps, without using more advanced CRD-based solutions like Istio and VMWare Contour.
 
 ## Usage
 
 ```console
-$ ./envoy-xds-configmap-loader -h
-Usage of ./envoy-xds-configmap-loader:
+$ crossover -h
+Usage of ./crossover:
   -apiserver string
     	K8s api endpoint (default "https://kubernetes")
   -configmap value
@@ -136,17 +136,23 @@ Usage of ./envoy-xds-configmap-loader:
     	the namespace to process.
   -onetime
     	run one time and exit.
+  -output-dir string
+    	Directory to putput xDS configs so that Envoy can read
+  -smi
+    	Enable SMI integration
   -sync-interval duration
     	the time duration between template processing. (default 1m0s)
   -token-file string
     	path to serviceaccount token file (default "/var/run/secrets/kubernetes.io/serviceaccount/token")
+  -trafficsplit value
+    	the trafficsplit to be watched and merged into the configmap
   -watch
     	use watch api to detect changes near realtime
 ```
 
 ## Getting Started
 
-Try weighted load-balancing using `envoy-xds-configmap-loader`!
+Try weighted load-balancing using `crossover`!
 
 Deploy Envoy along with the loader using the `stable/envoy` chart:
 
@@ -197,21 +203,21 @@ sudo mkdir /srv/runtime
 sudo chmod -R 777 /srv/runtime
 k get secret -o json $(k get secret | grep default-token | awk '{print $1 }') | jq -r .data.token | base64 -D > mytoken
 export APISERVER=$(k config view --minify -o json | jq -r .clusters[0].cluster.server)
-make build && ./envoy-xds-configmap-loader --namespace default --token-file ./mytoken --configmap incendiary-shark-envoy-xds --onetime --insecure --apiserver "http://127.0.0.1:8001"
+make build && ./crossover --namespace default --token-file ./mytoken --configmap incendiary-shark-envoy-xds --onetime --insecure --apiserver "http://127.0.0.1:8001"
 ```
 
 ## FAQ
 
 ### Why is the init container needed?
 
-`envoy-configmap-loader` needs to be included in your pod not only as a sidecar but also as an init container.
+`crossover` needs to be included in your pod not only as a sidecar but also as an init container.
 
 That's because Envoy checks for the existence of xDS-managed config files on startup. That is, if any of xDS-managed config files that are
 referenced from Envoy's bootstrap config is missing on startup, Envoy fails starting.
 
 Once Kubernetes adds [the first-class support for sidecar containers](https://github.com/kubernetes/enhancements/issues/753), the requisite of the init container is likely to go away.
 
-Anyways, `envoy-configmap-loader` is very resource-efficient in terms of image size and memory, it shouldn't be a huge problem.
+Anyways, `crossover` is very resource-efficient in terms of image size and memory, it shouldn't be a huge problem.
 
 ## References
 
@@ -223,13 +229,14 @@ Anyways, `envoy-configmap-loader` is very resource-efficient in terms of image s
 
 ### Other Envoy xDS implementations
 
+Kubernetes CRD and gRPC server based implementations
+
+- [Istio](https://istio.io/)
+- [Contour](https://github.com/projectcontour/contour)
+- [Ambassador](https://github.com/datawire/ambassador)
+- [Gloo](https://github.com/solo-io/gloo)
+
 Consul and gRPC server based implementations
 
 - [gojek/consul-envoy-xds](https://github.com/gojek/consul-envoy-xds)
-- [tak2siva/Envoy-Pilot](https://github.com/tak2siva/Envoy-Pilot])
-
-CRD and gRPC server based implementations
-
-- Istio
-- [Contour](https://github.com/projectcontour/contour)
-- [Ambassador](https://github.com/datawire/ambassador)
+- [tak2siva/Envoy-Pilot](https://github.com/tak2siva/Envoy-Pilot)

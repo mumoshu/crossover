@@ -10,7 +10,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/mumoshu/envoy-configmap-loader/pkg/types"
+	"github.com/mumoshu/crossover/pkg/types"
 )
 
 type ReadOnlyClient interface {

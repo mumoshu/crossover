@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/mumoshu/envoy-configmap-loader/pkg/kubeclient"
-	"github.com/mumoshu/envoy-configmap-loader/pkg/types"
+	"github.com/mumoshu/crossover/pkg/kubeclient"
+	"github.com/mumoshu/crossover/pkg/types"
 	"gopkg.in/yaml.v3"
 )
 

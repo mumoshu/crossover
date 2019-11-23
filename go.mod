@@ -1,4 +1,4 @@
-module github.com/mumoshu/envoy-configmap-loader
+module github.com/mumoshu/crossover
 
 go 1.12
 

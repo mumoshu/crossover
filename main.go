@@ -26,7 +26,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/mumoshu/envoy-configmap-loader/pkg/controller"
+	"github.com/mumoshu/crossover/pkg/controller"
 )
 
 func main() {

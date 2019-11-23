@@ -20,9 +20,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/mumoshu/envoy-configmap-loader/pkg/kubeclient"
-	"github.com/mumoshu/envoy-configmap-loader/pkg/reconciler"
-	"github.com/mumoshu/envoy-configmap-loader/pkg/types"
+	"github.com/mumoshu/crossover/pkg/kubeclient"
+	"github.com/mumoshu/crossover/pkg/reconciler"
+	"github.com/mumoshu/crossover/pkg/types"
 )
 
 type Controller struct {

@@ -1,17 +1,17 @@
 .PHONY: build
 build:
-	go build -o envoy-xds-configmap-loader .
+	go build -o crossover .
 
 .PHONY: image
 image: image/build image/push
 
 .PHONY: image/build
 image/build:
-	docker build -t mumoshu/envoy-xds-configmap-loader:canary-$(shell git rev-parse --short HEAD) .
+	docker build -t mumoshu/crossover:canary-$(shell git rev-parse --short HEAD) .
 
 .PHONY: image/push
 image/push:
-	docker push mumoshu/envoy-xds-configmap-loader:canary-$(shell git rev-parse --short HEAD)
+	docker push mumoshu/crossover:canary-$(shell git rev-parse --short HEAD)
 
 gen-mytoken:
 	kubectl get secret default-token-lggrz -o jsonpath={.data.token} | base64 -D > mytoken
@@ -24,7 +24,7 @@ gen-configmap:
 
 .PHONY: run/onetime
 run/onetime: build
-	./envoy-xds-configmap-loader \
+	./crossover \
 	  --namespace default \
 	  --token-file ./mytoken \
 	  --configmap incendiary-shark-envoy-xds \
@@ -35,7 +35,7 @@ run/onetime: build
 
 .PHONY: run/watch
 run/watch: build
-	./envoy-xds-configmap-loader \
+	./crossover \
 	  --namespace default \
 	  --token-file ./mytoken \
 	  --configmap incendiary-shark-envoy-xds \
@@ -46,7 +46,7 @@ run/watch: build
 
 .PHONY: run/watch-smi
 run/watch-smi: build
-	./envoy-xds-configmap-loader \
+	./crossover \
 	  --namespace default \
 	  --token-file ./mytoken \
 	  --configmap envoy-xds \

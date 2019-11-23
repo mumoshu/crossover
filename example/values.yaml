@@ -26,15 +26,15 @@ argsTemplate: |-
 
 xdsLoader:
   image:
-    repository: mumoshu/envoy-xds-configmap-loader
-    tag: canary-78954e4
+    repository: mumoshu/crossover
+    tag: canary-368934b
   syncInterval: 30s
 
 initContainersTemplate: |-
   - name: xds-init
     image: {{ .Values.xdsLoader.image.repository }}:{{ .Values.xdsLoader.image.tag }}
     command:
-    - envoy-xds-configmap-loader
+    - crossover
     args:
     - --configmap={{ template "envoy.fullname" . }}-xds
     {{ range $name, $svc := .Values.services -}}
@@ -57,7 +57,7 @@ sidecarContainersTemplate: |-
   - name: xds-update
     image: {{ .Values.xdsLoader.image.repository }}:{{ .Values.xdsLoader.image.tag }}
     command:
-    - envoy-xds-configmap-loader
+    - crossover
     args:
     - --configmap={{ template "envoy.fullname" . }}-xds
     {{ range $name, $svc := .Values.services -}}

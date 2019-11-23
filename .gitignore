@@ -3,7 +3,7 @@ mytoken
 *.iml
 .git
 .idea
-envoy-xds-configmap-loader
+crossover
 *.log
 test/out
 envoy-*.tgz
