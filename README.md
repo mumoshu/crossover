@@ -23,7 +23,7 @@ No need for `kubectl`, `client-go`, `apimachineary` or even Envoy's `go-control-
 
 You always start with a standard Envoy without `crossover`. If you're happy with that, keep using it and don't bother with adding additional moving part to the mix.
 
-Wanna do Canary Deployment with [Flagegr](https://github.com/weaveworks/flagger)?
+Wanna do Canary Deployment with [Flagger](https://github.com/weaveworks/flagger)?
 
 Got to need dynamically reconfiguring Envoy at runtime without time-consuming and unreliable reloads?
 
