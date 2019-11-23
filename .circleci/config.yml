@@ -349,3 +349,4 @@ workflows:
       - e2e-h1
       - e2e-h1-smi
       - e2e-h2c-smi
+      - e2e-h1-smi-flagger
