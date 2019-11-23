@@ -15,8 +15,10 @@ package reconciler
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"log"
+	"strconv"
 
 	"github.com/mumoshu/crossover/pkg/kubeclient"
 	"github.com/mumoshu/crossover/pkg/types"
@@ -34,6 +36,11 @@ func (r *TrafficSplitReconciler) Reconcile(name string) error {
 	ts := TrafficSplit{}
 	err := r.TrafficSplits.Get(r.Namespace, name, &ts)
 	if err != nil {
+		if err == types.ErrNotExist {
+			log.Printf("Trafficsplit %s/%s not found. Skipping reconcilation. This will be retried soon", r.Namespace, name)
+			return nil
+		}
+		log.Printf("Unexpected error while getting Trafficsplit %s/%s: %v", r.Namespace, name, err)
 		return err
 	}
 
@@ -64,7 +71,7 @@ func (r *TrafficSplitReconciler) Reconcile(name string) error {
 	err = r.ConfigMaps.Get(xdsNs, tplCmName, &tplCm)
 	if err != nil {
 		if err == types.ErrNotExist {
-			log.Printf("Could not find ConfigMap %q. Please create it: %v", tplCmName, err)
+			log.Printf("Could not find template ConfigMap %q. Please create it: %v", tplCmName, err)
 			return nil
 		} else {
 			return err
@@ -145,4 +152,33 @@ type TrafficSplitSpec struct {
 type TrafficSplitBackend struct {
 	Service string `json:"service,omitempty"`
 	Weight  int    `json:"weight,omitempty"`
+}
+
+type TrafficSplitBackendV1Alpha2 struct {
+	Service string `json:"service,omitempty"`
+	Weight  int    `json:"weight,omitempty"`
+}
+
+type TrafficSplitBackendV1Alpha1 struct {
+	Service string `json:"service,omitempty"`
+	Weight  string `json:"weight,omitempty"`
+}
+
+func (e *TrafficSplitBackend) UnmarshalJSON(data []byte) (err error) {
+	var v1alpha2 TrafficSplitBackendV1Alpha2
+	if err = json.Unmarshal(data, &v1alpha2); err != nil {
+		var v1alpha1 TrafficSplitBackendV1Alpha1
+		if err = json.Unmarshal(data, &v1alpha1); err != nil {
+			return err
+		}
+		v1alpha2.Service = v1alpha1.Service
+		weight, err := strconv.Atoi(v1alpha1.Weight)
+		if err != nil {
+			return err
+		}
+		v1alpha2.Weight = weight
+	}
+	e.Service = v1alpha2.Service
+	e.Weight = v1alpha2.Weight
+	return nil
 }

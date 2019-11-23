@@ -1,0 +1,25 @@
+services:
+  podinfo:
+    smi:
+      enabled: false
+    backends:
+      podinfo-primary:
+        port: 9898
+        weight: 50
+        http2:
+          enabled: false
+          protocol_options: {}
+        request_headers_to_add:
+        - header:
+            key: x-cluster-id
+            value: "123"
+      podinfo-canary:
+        port: 9898
+        weight: 50
+        http2:
+          enabled: false
+          protocol_options: {}
+        request_headers_to_add:
+        - header:
+            key: x-cluster-id
+            value: "456"

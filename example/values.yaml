@@ -27,8 +27,12 @@ argsTemplate: |-
 xdsLoader:
   image:
     repository: mumoshu/crossover
-    tag: canary-8b19311
+    tag: canary-693fd33
   syncInterval: 30s
+
+smi:
+  apiVersions:
+    trafficSplits: v1alpha2
 
 initContainersTemplate: |-
   - name: xds-init
@@ -42,6 +46,7 @@ initContainersTemplate: |-
     - --trafficsplit={{ $name }}
     {{ end -}}
     {{ end -}}
+    - --trafficsplit-api-version={{ .Values.smi.apiVersions.trafficSplits }}
     - --onetime
     - --insecure
     env:
@@ -65,6 +70,7 @@ sidecarContainersTemplate: |-
     - --trafficsplit={{ $name }}
     {{ end -}}
     {{ end -}}
+    - --trafficsplit-api-version={{ .Values.smi.apiVersions.trafficSplits }}
     - --sync-interval={{ .Values.xdsLoader.syncInterval }}
     - --watch
     - --insecure
@@ -307,32 +313,6 @@ codecType: auto
 
 route:
   name: podinfo
-
-services:
-  podinfo:
-    smi:
-      enabled: false
-    backends:
-      eerie-octopus-podinfo:
-        port: 9898
-        weight: 50
-        http2:
-          enabled: false
-          protocol_options: {}
-        request_headers_to_add:
-        - header:
-            key: x-cluster-id
-            value: "123"
-      bold-olm-podinfo:
-        port: 9898
-        weight: 50
-        http2:
-          enabled: false
-          protocol_options: {}
-        request_headers_to_add:
-        - header:
-            key: x-cluster-id
-            value: "456"
 
 ## ServiceMonitor consumed by prometheus-operator
 serviceMonitor:

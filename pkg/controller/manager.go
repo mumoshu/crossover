@@ -27,6 +27,8 @@ type Manager struct {
 	Onetime       bool
 	ConfigMaps    StringSlice
 	TrafficSplits StringSlice
+
+	SMITrafficSplitVersion string
 }
 
 func (m *Manager) Run(ctx context.Context) error {
@@ -70,7 +72,7 @@ func (m *Manager) Run(ctx context.Context) error {
 		}
 		tsclient := &kubeclient.KubeClient{
 			Resource:     "trafficsplits",
-			GroupVersion: "apis/split.smi-spec.io/v1alpha2",
+			GroupVersion: "apis/split.smi-spec.io/" + m.SMITrafficSplitVersion,
 			Server:       m.Server,
 			Token:        m.Token,
 			HttpClient:   createHttpClient(m.Insecure),
@@ -113,7 +115,7 @@ func (m *Manager) Run(ctx context.Context) error {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			if err := c.Poll(ctx, m.ConfigMaps, m.SyncInterval); err != nil {
+			if err := c.Poll(ctx, m.SyncInterval); err != nil {
 				log.Fatalf("%v", err)
 			}
 		}()

@@ -50,6 +50,7 @@ func main() {
 	flag.BoolVar(&manager.Watch, "watch", false, "use watch api to detect changes near realtime")
 	flag.BoolVar(&manager.SMIEnabled, "smi", false, "Enable SMI integration")
 	flag.Var(&manager.TrafficSplits, "trafficsplit", "the trafficsplit to be watched and merged into the configmap")
+	flag.StringVar(&manager.SMITrafficSplitVersion, "trafficsplit-api-version", "v1alpha2", "API version of SMI TrafficSplits e.g. v1alpha1")
 	flag.DurationVar(&manager.SyncInterval, "sync-interval", (60 * time.Second), "the time duration between template processing.")
 	flag.Parse()
 

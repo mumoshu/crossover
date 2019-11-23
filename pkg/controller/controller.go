@@ -50,12 +50,12 @@ func NewController(namespace string, client kubeclient.Client, reconciler reconc
 	return sync
 }
 
-func (s *Controller) Poll(ctx context.Context, resourceNames []string, syncInterval time.Duration) error {
+func (s *Controller) Poll(ctx context.Context, syncInterval time.Duration) error {
 	for {
-		for _, c := range resourceNames {
+		for _, c := range s.resourceNames {
 			s.updated <- c
 		}
-		log.Printf("Enqueued %d resources. Next sync in %v seconds.", len(resourceNames), syncInterval.Seconds())
+		log.Printf("Enqueued %d resources. Next sync in %v seconds.", len(s.resourceNames), syncInterval.Seconds())
 		select {
 		case <-time.After(syncInterval):
 		case <-ctx.Done():

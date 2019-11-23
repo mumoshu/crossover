@@ -152,13 +152,15 @@ Usage of ./crossover:
 
 ## Getting Started
 
+### ConfigMap-Only Mode
+
 Try weighted load-balancing using `crossover`!
 
 Deploy Envoy along with the loader using the `stable/envoy` chart:
 
 ```
 helm repo add stable https://kubernetes-charts.storage.googleapis.com
-helm upgrade --install envoy stable/envoy -f example/values.yaml
+helm upgrade --install envoy stable/envoy -f example/values.yaml -f example/values.services.yaml
 ```
 
 Then install backends - we use @stefanprodan's awesome [podinfo](https://github.com/stefanprodan/podinfo):
@@ -182,17 +184,64 @@ Finally, try changing load-balancing weights instantly and without restarting En
 
 ```
 # 100% bold-olm
-helm upgrade --install envoy stable/envoy -f example/values.yaml \
+helm upgrade --install envoy stable/envoy -f example/values.yaml -f example/values.services.yaml \
   --set services.podinfo.backends.eerie-octopus-podinfo.weight=0 \
   --set services.podinfo.backends.bold-olm-podinfo.weight=100
 
 # 100% eerie-octopus
-helm upgrade --install envoy stable/envoy -f example/values.yaml \
+helm upgrade --install envoy stable/envoy -f example/values.yaml -f example/values.services.yaml \
   --set services.podinfo.backends.eerie-octopus-podinfo.weight=100 \
   --set services.podinfo.backends.bold-olm-podinfo.weight=0
 ```
 
 See [example/values.yaml](example/values.yaml) for more details on the configuration.
+
+### ConfigMap + SMI TrafficSplit Mode
+
+The setup is mostly similar to that for CofigMap-only mode.
+
+Just add `services.podinfo.smi.enabled=true` while installing Envoy:
+
+```
+helm upgrade --install envoy stable/envoy \
+  -f example/values.yaml -f example/values.services.yaml \
+  --set services.podinfo.smi.enabled=true
+```
+
+Now you are ready to change weights by creating and modifying TrafficSplit like this:
+
+```
+apiVersion: split.smi-spec.io/v1alpha2
+kind: TrafficSplit
+metadata:
+  name: podinfo
+spec:
+  # The root service that clients use to connect to the destination application.
+  service: podinfo
+  # Services inside the namespace with their own selectors, endpoints and configuration.
+  backends:
+  - service: eerie-octopus-podinfo
+    weight: 0
+  - service: bold-olm-podinfo
+    weight: 100
+```
+
+Under the hood, `crossover` reads `podinfo` trafficsplit and `envoy-xds` configmap, merges the trafficsplit into the configmap to produce the final configmap `envoy-xds-gen`. It is `envoy-xds-gen` which is loaded into `envoy`. 
+
+For convenience, there are several manifest files each with different set of weights:
+
+```
+# 100% bold-olm
+kubectl apply -f podinfo-v0.trafficsplit.yaml
+
+# 75% bold-olm 25% eerie-octopus
+kubectl apply -f podinfo-v1.trafficsplit.yaml
+
+#...
+
+# 0% bold-olm 100% eerie-octupus
+kubectl apply -f podinfo-v4.trafficsplit.yaml
+```
 
 ## Developing
 

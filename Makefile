@@ -77,6 +77,10 @@ e2e/h2c-smi:
 e2e/h1-smi:
 	USE_SMI=1 ./e2e/run-testsuite.sh
 
+.PHONY: e2e/h1-smi-flagger
+e2e/h1-smi-flagger:
+	USE_FLAGGER=1 USE_SMI=1 ./e2e/run-testsuite.sh
+
 .PHONY: e2e/jplot
 e2e/jplot:
-	./e2e/run.sh "tail -f e2e.aggregate.log | ./e2e/tools.sh jplot"
+	./e2e/run.sh "tail -n 100 -f e2e.aggregate.log | ./e2e/tools.sh jplot"

@@ -1,6 +1,7 @@
 package kubeclient
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -50,19 +51,20 @@ func (tp *KubeClient) Get(namespace, name string, obj interface{}) error {
 		return fmt.Errorf("http get: %v", err)
 	}
 
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+	resp.Body.Close()
+
 	if resp.StatusCode == 404 {
+		log.Printf("Get %s/%s: %s", namespace, name, data)
 		return types.ErrNotExist
 	}
 
 	if resp.StatusCode != 200 {
 		return fmt.Errorf("non 200 response code: %v: %v", resp.StatusCode, req)
 	}
-
-	data, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-	resp.Body.Close()
 
 	if err := json.Unmarshal(data, obj); err != nil {
 		return err
@@ -100,12 +102,15 @@ WATCHES:
 				return
 			}
 
+			scanner := bufio.NewScanner(resp.Body)
+
 			// Read chunks until error or stop
-			for names != nil {
+			for names != nil  && scanner.Scan() {
 				log.Printf("Watch reading next chunk...")
 				evt := map[string]interface{}{}
-				if err := json.NewDecoder(resp.Body).Decode(&evt); err != nil {
-					log.Printf("Watch failed: %v", fmt.Errorf("json decode: %v", err))
+				body := scanner.Bytes()
+				if err := json.Unmarshal(body, &evt); err != nil {
+					log.Printf("Watch failed: %s: parsing %s: %v", u, body, err)
 					return
 				}
 				names <- name
@@ -162,19 +167,20 @@ func (tp *KubeClient) Create(namespace string, obj interface{}) error {
 		return fmt.Errorf("http get: %v", err)
 	}
 
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+	resp.Body.Close()
+
 	if resp.StatusCode == 404 {
+		log.Printf("Create %s/%s: %s", namespace, tp.Resource, body)
 		return types.ErrNotExist
 	}
 
 	if resp.StatusCode != 201 {
 		return fmt.Errorf("non 201 response code: %v: %v", resp.StatusCode, req)
 	}
-
-	_, err = ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-	resp.Body.Close()
 
 	return nil
 }
@@ -184,7 +190,7 @@ func (tp *KubeClient) Replace(namespace, name string, obj interface{}) error {
 	client := tp.HttpClient
 	req, err := http.NewRequest("PUT", u, nil)
 	if err != nil {
-		return fmt.Errorf("http get request creation: %v", err)
+		return fmt.Errorf("http put request creation: %v", err)
 	}
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", tp.Token))
 	req.Header.Add("Content-Type", "application/json")
@@ -197,22 +203,23 @@ func (tp *KubeClient) Replace(namespace, name string, obj interface{}) error {
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return fmt.Errorf("http get: %v", err)
+		return fmt.Errorf("http put: %v", err)
 	}
 
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+	resp.Body.Close()
+
 	if resp.StatusCode == 404 {
+		log.Printf("Replace %s/%s: %s", namespace, tp.Resource, body)
 		return types.ErrNotExist
 	}
 
 	if resp.StatusCode != 200 {
 		return fmt.Errorf("non 200 response code: %v: %v", resp.StatusCode, req)
 	}
-
-	_, err = ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-	resp.Body.Close()
 
 	return nil
 }
