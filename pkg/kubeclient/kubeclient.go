@@ -217,6 +217,13 @@ func (tp *KubeClient) Replace(namespace, name string, obj interface{}) error {
 		return types.ErrNotExist
 	}
 
+	// 409 CONFLICT here mean that another crossover sidecar has successfully updated the resource i.e. the configmap
+	// is already up-to-date, that we don't need to retry it now.
+	if resp.StatusCode == 409 {
+		log.Printf("Replace %s/%s: %s", namespace, tp.Resource, body)
+		return nil
+	}
+
 	if resp.StatusCode != 200 {
 		return fmt.Errorf("non 200 response code: %v: %v", resp.StatusCode, req)
 	}
