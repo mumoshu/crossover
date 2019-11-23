@@ -33,7 +33,7 @@ fi
 PODINFO_EXTRA_FLAGS=""
 VEGETA_EXTRA_FLAGS=""
 if [ ! -z "${USE_H2C}" ]; then
-  ENVOY_EXTRA_ARGS="--set services.podinfo.backends.${CANARY_SVC}.http2.enabled=true --set services.podinfo.backends.${PRIMARY_SVC}.http2.enabled=true"
+  ENVOY_EXTRA_ARGS="${ENVOY_EXTRA_ARGS} --set services.podinfo.backends.${CANARY_SVC}.http2.enabled=true --set services.podinfo.backends.${PRIMARY_SVC}.http2.enabled=true"
   PODINFO_EXTRA_FLAGS="--set h2c.enabled=true"
   VEGETA_EXTRA_FLAGS="-http2=true -h2c"
 else
