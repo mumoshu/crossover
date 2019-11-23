@@ -68,6 +68,74 @@ jobs:
           make e2e/h2c
           cat e2e.aggregate.log
 
+  e2e-h2c-smi:
+    machine:
+      image: circleci/classic:201808-01
+    steps:
+    - checkout
+    - run:
+        name: Install testing tools
+        command: |
+          GOBIN=~/bin go get -u github.com/tsenart/vegeta
+          sudo mv ~/bin/vegeta /usr/local/bin/
+          vegeta --version
+
+          GOBIN=~/bin go get -u github.com/rs/jaggr
+          sudo mv ~/bin/jaggr /usr/local/bin/
+          jaggr -version
+
+          # We need a recent jq for @base64d
+          curl -Lo ~/bin/jq https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64
+          chmod +x ~/bin/jq
+          sudo mv ~/bin/jq /usr/local/bin/
+          jq --version
+    - run:
+        name: Install Helm
+        environment:
+          HELM_VERSION: v3.0.0-rc.2
+        command: |
+          HELM_FILENAME="helm-${HELM_VERSION}-linux-amd64.tar.gz"
+          curl -Lo ${HELM_FILENAME} "https://get.helm.sh/${HELM_FILENAME}"
+          tar zxf ${HELM_FILENAME} linux-amd64/helm
+          chmod +x linux-amd64/helm
+          sudo mv linux-amd64/helm /usr/local/bin/
+    - run:
+        name: Setup Kubernetes
+        environment:
+          # See https://hub.docker.com/r/kindest/node/tags for available tags(k8s versions)
+          K8S_VERSION: v1.12.10
+          KIND_VERSION: v0.5.1
+        command: |
+          curl -Lo kubectl https://storage.googleapis.com/kubernetes-release/release/${K8S_VERSION}/bin/linux/amd64/kubectl
+          chmod +x kubectl && sudo mv kubectl /usr/local/bin/
+
+          curl -Lo ./kind https://github.com/kubernetes-sigs/kind/releases/download/${KIND_VERSION}/kind-$(uname)-amd64
+          chmod +x ./kind
+          sudo mv ./kind /usr/local/bin/
+
+          kind create cluster --name minikube --image kindest/node:${K8S_VERSION}
+
+          KUBECONFIG="$(kind get kubeconfig-path --name="minikube")"
+
+          echo Copying ${KUBECONFIG} to ~/.kube/config so that it is available to the succeeding steps.
+
+          cp ${KUBECONFIG} ~/.kube/config
+    - run:
+        name: Wait for nodes to become ready
+        command: JSONPATH='{range .items[*]}{@.metadata.name}:{range @.status.conditions[*]}{@.type}={@.status};{end}{end}'; until kubectl get nodes -o jsonpath="$JSONPATH" 2>&1 | grep -q "Ready=True"; do sleep 1; done
+    - run:
+        name: Configuring RBAC
+        command: |
+          # Allow xds-configmap-loader to read configmaps in the same namespace.
+          # Otherwise it complains like this and makes envoy pods into crash loops:
+          #   get configmap default/envoy-xds: non 200 response code: 403: &{GET https://kubernetes/api/v1/namespaces/default/configmaps/envoy-xds *snip*
+          kubectl create clusterrolebinding default --clusterrole cluster-admin --serviceaccount default:default
+    - run:
+        name: Run tests
+        command: |
+          make e2e/h2c-smi
+          cat e2e.aggregate.log
+
   e2e-h1:
     machine:
       image: circleci/classic:201808-01
@@ -136,9 +204,79 @@ jobs:
           make e2e/h1
           cat e2e.aggregate.log
 
+  e2e-h1-smi:
+    machine:
+      image: circleci/classic:201808-01
+    steps:
+    - checkout
+    - run:
+        name: Install testing tools
+        command: |
+          GOBIN=~/bin go get -u github.com/tsenart/vegeta
+          sudo mv ~/bin/vegeta /usr/local/bin/
+          vegeta --version
+
+          GOBIN=~/bin go get -u github.com/rs/jaggr
+          sudo mv ~/bin/jaggr /usr/local/bin/
+          jaggr -version
+
+          # We need a recent jq for @base64d
+          curl -Lo ~/bin/jq https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64
+          chmod +x ~/bin/jq
+          sudo mv ~/bin/jq /usr/local/bin/
+          jq --version
+    - run:
+        name: Install Helm
+        environment:
+          HELM_VERSION: v3.0.0-rc.2
+        command: |
+          HELM_FILENAME="helm-${HELM_VERSION}-linux-amd64.tar.gz"
+          curl -Lo ${HELM_FILENAME} "https://get.helm.sh/${HELM_FILENAME}"
+          tar zxf ${HELM_FILENAME} linux-amd64/helm
+          chmod +x linux-amd64/helm
+          sudo mv linux-amd64/helm /usr/local/bin/
+    - run:
+        name: Setup Kubernetes
+        environment:
+          # See https://hub.docker.com/r/kindest/node/tags for available tags(k8s versions)
+          K8S_VERSION: v1.12.10
+          KIND_VERSION: v0.5.1
+        command: |
+          curl -Lo kubectl https://storage.googleapis.com/kubernetes-release/release/${K8S_VERSION}/bin/linux/amd64/kubectl
+          chmod +x kubectl && sudo mv kubectl /usr/local/bin/
+
+          curl -Lo ./kind https://github.com/kubernetes-sigs/kind/releases/download/${KIND_VERSION}/kind-$(uname)-amd64
+          chmod +x ./kind
+          sudo mv ./kind /usr/local/bin/
+
+          kind create cluster --name minikube --image kindest/node:${K8S_VERSION}
+
+          KUBECONFIG="$(kind get kubeconfig-path --name="minikube")"
+
+          echo Copying ${KUBECONFIG} to ~/.kube/config so that it is available to the succeeding steps.
+
+          cp ${KUBECONFIG} ~/.kube/config
+    - run:
+        name: Wait for nodes to become ready
+        command: JSONPATH='{range .items[*]}{@.metadata.name}:{range @.status.conditions[*]}{@.type}={@.status};{end}{end}'; until kubectl get nodes -o jsonpath="$JSONPATH" 2>&1 | grep -q "Ready=True"; do sleep 1; done
+    - run:
+        name: Configuring RBAC
+        command: |
+          # Allow xds-configmap-loader to read configmaps in the same namespace.
+          # Otherwise it complains like this and makes envoy pods into crash loops:
+          #   get configmap default/envoy-xds: non 200 response code: 403: &{GET https://kubernetes/api/v1/namespaces/default/configmaps/envoy-xds *snip*
+          kubectl create clusterrolebinding default --clusterrole cluster-admin --serviceaccount default:default
+    - run:
+        name: Run tests
+        command: |
+          make e2e/h1-smi
+          cat e2e.aggregate.log
+
 workflows:
   version: 2
   test:
     jobs:
       - e2e-h2c
       - e2e-h1
+      - e2e-h1-smi
+      - e2e-h2c-smi

@@ -27,7 +27,7 @@ argsTemplate: |-
 xdsLoader:
   image:
     repository: mumoshu/crossover
-    tag: canary-368934b
+    tag: canary-8b19311
   syncInterval: 30s
 
 initContainersTemplate: |-

@@ -235,6 +235,7 @@ Kubernetes CRD and gRPC server based implementations
 - [Contour](https://github.com/projectcontour/contour)
 - [Ambassador](https://github.com/datawire/ambassador)
 - [Gloo](https://github.com/solo-io/gloo)
+- [flagger-appmesh-gateway](https://github.com/stefanprodan/flagger-appmesh-gateway)
 
 Consul and gRPC server based implementations
 
