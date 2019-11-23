@@ -23,15 +23,13 @@ No need for `kubectl`, `client-go`, `apimachineary` or even Envoy's `go-control-
 
 You always start with a standard Envoy without `crossover`. If you're happy with that, keep using it and don't bother with adding additional moving part to the mix.
 
-Wanna do Canary Deployment with [Flagger](https://github.com/weaveworks/flagger)?
+Canary deployments with [Flagger](https://github.com/weaveworks/flagger)?
 
-Got to need dynamically reconfiguring Envoy at runtime without time-consuming and unreliable reloads?
+Reconfigure Envoy without time-consuming and unreliable reloads?
 
-OK - Turn on dynamic config with `crossover`.
+Enter `crossover`.
 
-Edit your static envoy configuration to load xDS from local files.
-Update local files via configmaps by adding `crossover` as an init container and a sidecar container of your Envoy pod.
-That's all you need to get started really!
+Add `crossover` as a sidecar container to your Envoy. Update configmaps and trafficsplist via kubectl or helm to load changes into Envoy in near-realtime. That's all you need to get started, really!
 
 ### Understandable
 
