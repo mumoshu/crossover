@@ -51,6 +51,11 @@ You write regular Envoy config files. `crossover` just merges and syncs it to En
 
 ## Design
 
+```
+
+[ Envoy ]--reads-->[ xDS YAML file ]<--writes--[ Crossover ]--reads-->[ ConfigMap, TrafficSplit ]<--write--[ Kubectl, Helm, etc. ]
+```
+
 [Envoy](https://www.envoyproxy.io/) is able to reconfigure itself at runtime by reading local files or by querying one or more management servers called xDS servers.
 
 `crossover` is an implementation of xDS that translates configs stored in Kubernetes to Envoy primitives.
