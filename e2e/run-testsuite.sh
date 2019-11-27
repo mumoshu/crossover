@@ -27,7 +27,7 @@ if [ ! -z "${USE_FLAGGER}" ]; then
 else
   PRIMARY_SVC=bold-olm-podinfo
   CANARY_SVC=eerie-octopus-podinfo
-  ENVOY_EXTRA_ARGS="-f example/values.smi.yaml"
+  ENVOY_EXTRA_ARGS="-f example/values.services.yaml"
 fi
 
 PODINFO_EXTRA_FLAGS=""
