@@ -211,6 +211,25 @@ helm upgrade --install envoy stable/envoy \
   --set services.podinfo.smi.enabled=true
 ```
 
+Or to be extra sure, you can do it wihout `example/values.services.yaml`:
+
+```
+helm upgrade --install envoy stable/envoy   --namespace test   -f example/values.yaml   -f <(cat <<EOF
+services:
+  podinfo:
+    smi:
+      enabled: true
+    backends:
+      eerie-octopus-podinfo:
+        port: 9898
+        weight: 50
+      bold-olm-podinfo:
+        port: 9898
+        weight: 50
+EOF
+)
+```
+
 Now you are ready to change weights by creating and modifying TrafficSplit like this:
 
 ```

@@ -40,6 +40,7 @@ initContainersTemplate: |-
     command:
     - crossover
     args:
+    - --apiserver={{ .apiserver }}
     - --configmap={{ template "envoy.fullname" . }}-xds
     {{ range $name, $svc := .Values.services -}}
     {{ if $svc.smi.enabled -}}
@@ -64,6 +65,7 @@ sidecarContainersTemplate: |-
     command:
     - crossover
     args:
+    - --apiserver={{ .apiserver }}
     - --configmap={{ template "envoy.fullname" . }}-xds
     {{ range $name, $svc := .Values.services -}}
     {{ if $svc.smi.enabled -}}
@@ -245,8 +247,10 @@ templates:
         type: strict_dns
         dns_lookup_family: V4_ONLY
         lb_policy: round_robin
+        {{ if $svc.http2 -}}
         {{ if $svc.http2.enabled -}}
         http2_protocol_options: {{ default (dict) $svc.http2.protocol_options | toJson }}
+        {{ end -}}
         {{ end -}}
         # IMHO this is a must-have when STRICT_DNS is used for SD
         # https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/cds.proto#envoy-api-field-cluster-drain-connections-on-host-removal
@@ -313,6 +317,8 @@ codecType: auto
 
 route:
   name: podinfo
+
+apiserver: https://kubernetes.default
 
 ## ServiceMonitor consumed by prometheus-operator
 serviceMonitor:
