@@ -40,7 +40,7 @@ initContainersTemplate: |-
     command:
     - crossover
     args:
-    - --apiserver={{ .apiserver }}
+    - --apiserver={{ .Values.apiserver }}
     - --configmap={{ template "envoy.fullname" . }}-xds
     {{ range $name, $svc := .Values.services -}}
     {{ if $svc.smi.enabled -}}
@@ -65,7 +65,7 @@ sidecarContainersTemplate: |-
     command:
     - crossover
     args:
-    - --apiserver={{ .apiserver }}
+    - --apiserver={{ .Values.apiserver }}
     - --configmap={{ template "envoy.fullname" . }}-xds
     {{ range $name, $svc := .Values.services -}}
     {{ if $svc.smi.enabled -}}
