@@ -367,20 +367,15 @@ jobs:
       - run:
           name: Publish charts
           command: |
-            if echo "${CIRCLE_TAG}" | grep -Eq "[0-9]+(\.[0-9]+)*(-[a-z]+)?$"; then
-              REPOSITORY="https://mumoshubot:${GITHUB_TOKEN}@github.com/mumoshu/crossover.git"
-              git config user.email mumoshubot@users.noreply.github.com
-              git config user.name mumoshusbot
-              git remote set-url origin ${REPOSITORY}
-              git checkout gh-pages
-              mv -f $HOME/charts/*.tgz .
-              helm repo index . --url https://mumoshu.github.io/crossover
-              git add .
-              git commit -m "Publish Helm charts v${CIRCLE_TAG}"
-              git push origin gh-pages
-            else
-              echo "Not a release! Skip charts publish"
-            fi
+            REPOSITORY="https://mumoshubot:${GITHUB_TOKEN}@github.com/mumoshu/crossover.git"
+            git config user.email mumoshubot@users.noreply.github.com
+            git config user.name mumoshusbot
+            git remote set-url origin ${REPOSITORY}
+            git checkout gh-pages
+            mv -f $HOME/charts/*.tgz .
+            helm repo index . --url https://mumoshu.github.io/crossover
+            git add .
+            git commit -m "Publish Helm charts" && git push origin gh-pages
 
 workflows:
   version: 2
