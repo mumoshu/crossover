@@ -166,6 +166,13 @@ helm repo add stable https://kubernetes-charts.storage.googleapis.com
 helm upgrade --install envoy stable/envoy -f example/values.yaml -f example/values.services.yaml
 ```
 
+Or by using `crossover/envoy` chart:
+
+```
+helm repo add crossover https://mumoshu.github.com/crossover
+helm upgrade --install envoy crossover/envoy -f example/values.services.yaml
+```
+
 Then install backends - we use @stefanprodan's awesome [podinfo](https://github.com/stefanprodan/podinfo):
 
 ```
@@ -208,6 +215,14 @@ Just add `services.podinfo.smi.enabled=true` while installing Envoy:
 ```
 helm upgrade --install envoy stable/envoy \
   -f example/values.yaml -f example/values.services.yaml \
+  --set services.podinfo.smi.enabled=true
+```
+
+Or with the `crossover/envoy` chart:
+
+```
+helm repo add crossover https://mumoshu.github.com/crossover
+helm upgrade --install envoy crossover/envoy -f example/values.services.yaml \
   --set services.podinfo.smi.enabled=true
 ```
 
