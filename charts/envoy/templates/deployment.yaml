@@ -36,6 +36,11 @@ spec:
         {{- end }}
         {{- end }}
     spec:
+      {{- if .Values.serviceAccount.name }}
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      {{- else if .Values.rbac.create }}
+      serviceAccountName: {{ include "envoy.fullname" . }}
+      {{- end }}
       securityContext:
         {{ toYaml .Values.securityContext | nindent 8 }}
       {{- if .Values.priorityClassName }}
