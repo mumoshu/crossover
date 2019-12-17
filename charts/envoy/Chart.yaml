@@ -1,0 +1,15 @@
+apiVersion: v1
+description: Envoy with Crossover sidecar
+name: envoy
+version: 1.0.0
+appVersion: 1.11.1
+keywords:
+- envoy
+- proxy
+home: https://www.envoyproxy.io/
+sources:
+- https://github.com/envoyproxy/envoy
+maintainers:
+- name: mumoshu
+  email: ykuoka@gmail.com
+icon: https://avatars0.githubusercontent.com/u/30125649
