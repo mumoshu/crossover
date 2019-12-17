@@ -386,11 +386,31 @@ workflows:
   version: 2
   test:
     jobs:
-      - e2e-h2c
-      - e2e-h1
-      - e2e-h1-smi
-      - e2e-h2c-smi
-      - e2e-h1-smi-flagger
+      - e2e-h2c:
+          filters:
+            branches:
+              ignore:
+                - gh-pages
+      - e2e-h1:
+          filters:
+            branches:
+              ignore:
+                - gh-pages
+      - e2e-h1-smi:
+          filters:
+            branches:
+              ignore:
+                - gh-pages
+      - e2e-h2c-smi:
+          filters:
+            branches:
+              ignore:
+                - gh-pages
+      - e2e-h1-smi-flagger:
+          filters:
+            branches:
+              ignore:
+                - gh-pages
   release:
     jobs:
     - push-helm-charts:
