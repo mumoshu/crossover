@@ -411,7 +411,5 @@ workflows:
     - push-helm-charts:
         filters:
           branches:
-            ignore:
-            - gh-pages
-          tags:
-            ignore: /^chart.*/
+            only:
+            - master
