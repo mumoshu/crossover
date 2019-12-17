@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Values.service.name }}
+  name: {{ if .Values.service.name }}{{ .Values.service.name }}{{ else }}{{ template "envoy.fullname" . }}{{ end }}
   labels:
     app: {{ template "envoy.name" . }}
     chart: {{ template "envoy.chart" . }}

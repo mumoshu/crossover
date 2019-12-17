@@ -34,9 +34,9 @@ Create chart name and version as used by the chart label.
 {{/*
 Create the name of the service account to use
 */}}
-{{- define "flagger.serviceAccountName" -}}
+{{- define "envoy.serviceAccountName" -}}
 {{- if .Values.serviceAccount.create -}}
-    {{ default (include "flagger.fullname" .) .Values.serviceAccount.name }}
+    {{ default (include "envoy.fullname" .) .Values.serviceAccount.name }}
 {{- else -}}
     {{ default "default" .Values.serviceAccount.name }}
 {{- end -}}
