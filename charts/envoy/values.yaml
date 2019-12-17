@@ -368,3 +368,6 @@ rbac:
   create: true
   # rbac.pspEnabled: `true` if PodSecurityPolicy resources should be created
   pspEnabled: false
+
+crd:
+  create: true
