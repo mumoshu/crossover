@@ -3,9 +3,9 @@ entries:
   envoy:
   - apiVersion: v1
     appVersion: 1.11.1
-    created: "2019-12-17T10:41:35.807320104Z"
+    created: "2019-12-17T11:29:30.344670696Z"
     description: Envoy with Crossover sidecar
-    digest: 7483bd4fbcdbc56c6d623e53d55e4959b9864b4fea8d0d6f242f2f258f57cb8c
+    digest: dd83ff431cd77e1ca8476dbc52a24a2a60a52d6a4949b3997e8678f1b602c54f
     home: https://www.envoyproxy.io/
     icon: https://avatars0.githubusercontent.com/u/30125649
     keywords:
@@ -22,7 +22,7 @@ entries:
     version: 0.1.3
   - apiVersion: v1
     appVersion: 1.11.1
-    created: "2019-12-17T10:41:35.806853481Z"
+    created: "2019-12-17T11:29:30.344178993Z"
     description: Envoy with Crossover sidecar
     digest: 67f3c97e911fd9ca4658051bd6970896133904dbbf481c51973653918fb95264
     home: https://www.envoyproxy.io/
@@ -41,7 +41,7 @@ entries:
     version: 0.1.2
   - apiVersion: v1
     appVersion: 1.11.1
-    created: "2019-12-17T10:41:35.806408527Z"
+    created: "2019-12-17T11:29:30.343740346Z"
     description: Envoy with Crossover sidecar
     digest: d4e51572d4bf71996c959953ddc4cbc37fd9ea24d410f89dee37d3fdde55f26e
     home: https://www.envoyproxy.io/
@@ -60,7 +60,7 @@ entries:
     version: 0.1.1
   - apiVersion: v1
     appVersion: 1.11.1
-    created: "2019-12-17T10:41:35.805927503Z"
+    created: "2019-12-17T11:29:30.34327565Z"
     description: Envoy with Crossover sidecar
     digest: 83b92d99474bde4b190fd5fc20a4db4c1d72061dcf009b09536174b2d8380973
     home: https://www.envoyproxy.io/
@@ -77,4 +77,4 @@ entries:
     urls:
     - https://mumoshu.github.io/crossover/envoy-0.1.0.tgz
     version: 0.1.0
-generated: "2019-12-17T10:41:35.805199501Z"
+generated: "2019-12-17T11:29:30.342577549Z"
