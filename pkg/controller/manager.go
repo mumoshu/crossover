@@ -45,7 +45,12 @@ func (m *Manager) Run(ctx context.Context) error {
 	var genConfigs []string
 	if m.SMIEnabled {
 		for _, c := range m.ConfigMaps {
-			genConfigs = append(genConfigs, c + "-gen")
+			genCM := c + "-gen"
+			genConfigs = append(genConfigs, genCM)
+
+			if err := m.InitConfigMap(m.Namespace, c, genCM, cmclient); err != nil {
+				return err
+			}
 		}
 	} else {
 		genConfigs = m.ConfigMaps
