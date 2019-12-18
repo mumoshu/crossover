@@ -42,8 +42,8 @@ initContainersTemplate: |-
     args:
     - --apiserver={{ .Values.apiserver }}
     - --configmap={{ template "envoy.fullname" . }}-xds
-    {{ range $name, $svc := .Values.services -}}
-    {{ if $svc.smi.enabled -}}
+    {{ range $name, $upstream := .Values.upstreams -}}
+    {{ if $upstream.smi.enabled -}}
     - --trafficsplit={{ $name }}
     {{ end -}}
     {{ end -}}
@@ -67,8 +67,8 @@ sidecarContainersTemplate: |-
     args:
     - --apiserver={{ .Values.apiserver }}
     - --configmap={{ template "envoy.fullname" . }}-xds
-    {{ range $name, $svc := .Values.services -}}
-    {{ if $svc.smi.enabled -}}
+    {{ range $name, $upstream := .Values.upstreams -}}
+    {{ if $upstream.smi.enabled -}}
     - --trafficsplit={{ $name }}
     {{ end -}}
     {{ end -}}
@@ -240,16 +240,16 @@ templates:
               http_filters:
               - name: envoy.router
       clusters:
-      {{ range $_, $service := .Values.services -}}
-      {{ range $name, $svc := $service.backends -}}
+      {{ range $_, $upstream := .Values.upstreams -}}
+      {{ range $name, $backend := $upstream.backends -}}
       - name: {{ $name | replace "." "_" }}
         connect_timeout: 0.25s
         type: strict_dns
         dns_lookup_family: V4_ONLY
         lb_policy: round_robin
-        {{ if $svc.http2 -}}
-        {{ if $svc.http2.enabled -}}
-        http2_protocol_options: {{ default (dict) $svc.http2.protocol_options | toJson }}
+        {{ if $backend.http2 -}}
+        {{ if $backend.http2.enabled -}}
+        http2_protocol_options: {{ default (dict) $backend.http2.protocol_options | toJson }}
         {{ end -}}
         {{ end -}}
         # IMHO this is a must-have when STRICT_DNS is used for SD
@@ -263,7 +263,7 @@ templates:
                 address:
                   socket_address:
                     address: {{ $name }}
-                    port_value: {{ $svc.port }}
+                    port_value: {{ $backend.port }}
       {{ end -}}
       {{ end -}}
 
@@ -276,8 +276,8 @@ xds:
       name: {{ .Values.route.name }}
       # https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/route/route.proto#envoy-api-msg-route-virtualhost
       virtual_hosts:
-      {{ range $serviceName, $service := .Values.services -}}
-      - name: {{ $serviceName }}
+      {{ range $upstreamName, $upstream := .Values.upstreams -}}
+      - name: {{ $upstreamName }}
         domains:
         - "*"
         # https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/route/route.proto#envoy-api-msg-route-route
@@ -291,18 +291,18 @@ xds:
               # https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/route/route.proto#envoy-api-msg-route-weightedcluster-clusterweight
               clusters:
               {{ $sum := 0 }}
-              {{ range $name, $svc := $service.backends -}}
-              {{ $sum = add $sum $svc.weight }}
+              {{ range $name, $backend := $upstream.backends -}}
+              {{ $sum = add $sum $backend.weight }}
               - name: {{ $name | replace "." "_" }}
-                weight: {{ $svc.weight }}
-                {{ if $svc.per_filter_config -}}
+                weight: {{ $backend.weight }}
+                {{ if $backend.per_filter_config -}}
                 per_filter_config:
-                  {{ $svc.per_filter_config | toYaml | nindent 14 }}
+                  {{ $backend.per_filter_config | toYaml | nindent 14 }}
                 {{ end -}}
-                {{ if $svc.request_headers_to_add -}}
+                {{ if $backend.request_headers_to_add -}}
                 # See https://github.com/envoyproxy/envoy/pull/2765
                 request_headers_to_add:
-                  {{ $svc.request_headers_to_add | toYaml | nindent 14 }}
+                  {{ $backend.request_headers_to_add | toYaml | nindent 14 }}
                 {{ end -}}
               {{ end }}
               {{ if ne $sum 100 }}

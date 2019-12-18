@@ -170,7 +170,7 @@ Or by using `crossover/envoy` chart:
 
 ```
 helm repo add crossover https://mumoshu.github.com/crossover
-helm upgrade --install envoy crossover/envoy -f example/values.services.yaml
+helm upgrade --install envoy crossover/envoy -f example/values.upstreams.yaml
 ```
 
 Then install backends - we use @stefanprodan's awesome [podinfo](https://github.com/stefanprodan/podinfo):

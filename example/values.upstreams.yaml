@@ -1,0 +1,25 @@
+upstreams:
+  podinfo:
+    smi:
+      enabled: false
+    backends:
+      eerie-octopus-podinfo:
+        port: 9898
+        weight: 50
+        http2:
+          enabled: false
+          protocol_options: {}
+        request_headers_to_add:
+        - header:
+            key: x-cluster-id
+            value: "123"
+      bold-olm-podinfo:
+        port: 9898
+        weight: 50
+        http2:
+          enabled: false
+          protocol_options: {}
+        request_headers_to_add:
+        - header:
+            key: x-cluster-id
+            value: "456"
