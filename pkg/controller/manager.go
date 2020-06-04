@@ -89,7 +89,7 @@ func (m *Manager) Run(ctx context.Context) error {
 			reconciler: &reconciler.TrafficSplitReconciler{
 				TrafficSplits: tsclient,
 				ConfigMaps:    cmclient,
-				TsToConfigs: tsToConfigs,
+				TsToConfigs:   tsToConfigs,
 				Namespace:     m.Namespace,
 			},
 			resourceNames: m.TrafficSplits,

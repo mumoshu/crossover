@@ -17,6 +17,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"sync"
 	"time"
 
@@ -26,7 +27,7 @@ import (
 )
 
 type Controller struct {
-	namespace string
+	namespace     string
 	resourceNames StringSlice
 
 	client     kubeclient.Client
@@ -55,7 +56,10 @@ func (s *Controller) Poll(ctx context.Context, syncInterval time.Duration) error
 		for _, c := range s.resourceNames {
 			s.updated <- c
 		}
+
+		log.SetOutput(os.Stdout)
 		log.Printf("Enqueued %d resources. Next sync in %v seconds.", len(s.resourceNames), syncInterval.Seconds())
+		log.SetOutput(os.Stderr)
 		select {
 		case <-time.After(syncInterval):
 		case <-ctx.Done():

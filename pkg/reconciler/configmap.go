@@ -3,6 +3,7 @@ package reconciler
 import (
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/mumoshu/crossover/pkg/kubeclient"
 	"github.com/mumoshu/crossover/pkg/types"
@@ -22,7 +23,9 @@ type ConfigmapReconciler struct {
 }
 
 func (s *ConfigmapReconciler) Reconcile(c string) error {
+	log.SetOutput(os.Stdout)
 	log.Printf("Reconciling configmap %s", c)
+	log.SetOutput(os.Stderr)
 	cm := ConfigMap{}
 	err := s.Client.Get(s.Namespace, c, &cm)
 	if err != nil {

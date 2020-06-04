@@ -33,7 +33,9 @@ func (rf *writer) write(route ConfigMap) error {
 	}
 
 	id := fmt.Sprintf("%s/%s", route.ObjectMeta.Namespace, route.ObjectMeta.Name)
+	log.SetOutput(os.Stdout)
 	log.Printf("Processing %s", id)
+	log.SetOutput(os.Stderr)
 	if len(route.Data) == 0 {
 		log.Printf("Nothing to write! Configmap %s has no data", route.ObjectMeta.Name)
 		return nil
@@ -41,11 +43,15 @@ func (rf *writer) write(route ConfigMap) error {
 	for fn, content := range route.Data {
 		newFile := filepath.Join(newDir, fn)
 		currentFile := filepath.Join(currentDir, fn)
+		log.SetOutput(os.Stdout)
 		log.Printf("Writing file %s", newFile)
+		log.SetOutput(os.Stderr)
 		if err := ioutil.WriteFile(newFile, []byte(content), 0666); err != nil {
 			return err
 		}
+		log.SetOutput(os.Stdout)
 		log.Printf("Moving file to %s", currentFile)
+		log.SetOutput(os.Stderr)
 		if err := os.Rename(newFile, currentFile); err != nil {
 			return fmt.Errorf("failed renaming %s to %s: %v", newFile, currentFile, err)
 		}
