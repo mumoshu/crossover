@@ -16,22 +16,24 @@ package controller
 import (
 	"context"
 	"fmt"
-	"log"
 	"sync"
 	"time"
 
 	"github.com/mumoshu/crossover/pkg/kubeclient"
+	"github.com/mumoshu/crossover/pkg/log"
 	"github.com/mumoshu/crossover/pkg/reconciler"
 	"github.com/mumoshu/crossover/pkg/types"
 )
 
 type Controller struct {
-	namespace string
+	namespace     string
 	resourceNames StringSlice
 
 	client     kubeclient.Client
 	reconciler reconciler.Reconciler
 	updated    chan string
+
+	log.Logger
 }
 
 type Opts struct {
@@ -55,7 +57,7 @@ func (s *Controller) Poll(ctx context.Context, syncInterval time.Duration) error
 		for _, c := range s.resourceNames {
 			s.updated <- c
 		}
-		log.Printf("Enqueued %d resources. Next sync in %v seconds.", len(s.resourceNames), syncInterval.Seconds())
+		s.Infof("Enqueued %d resources. Next sync in %v seconds.", len(s.resourceNames), syncInterval.Seconds())
 		select {
 		case <-time.After(syncInterval):
 		case <-ctx.Done():

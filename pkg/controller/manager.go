@@ -4,13 +4,14 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"log"
 	"net"
 	"net/http"
+	"os"
 	"sync"
 	"time"
 
 	"github.com/mumoshu/crossover/pkg/kubeclient"
+	"github.com/mumoshu/crossover/pkg/log"
 	"github.com/mumoshu/crossover/pkg/reconciler"
 )
 
@@ -29,10 +30,14 @@ type Manager struct {
 	TrafficSplits StringSlice
 
 	SMITrafficSplitVersion string
+
+	log.Logger
 }
 
 func (m *Manager) Run(ctx context.Context) error {
 	controllers := []*Controller{}
+
+	logger := m.Logger
 
 	cmclient := &kubeclient.KubeClient{
 		Resource:     "configmaps",
@@ -63,8 +68,10 @@ func (m *Manager) Run(ctx context.Context) error {
 			Client:    cmclient,
 			Namespace: m.Namespace,
 			OutputDir: m.OutputDir,
+			Logger:    logger,
 		},
 		resourceNames: genConfigs,
+		Logger:        logger,
 	}
 
 	if m.SMIEnabled {
@@ -81,6 +88,7 @@ func (m *Manager) Run(ctx context.Context) error {
 			Server:       m.Server,
 			Token:        m.Token,
 			HttpClient:   createHttpClient(m.Insecure),
+			Logger:       logger,
 		}
 		trafficsplits := &Controller{
 			updated:   make(chan string),
@@ -89,10 +97,12 @@ func (m *Manager) Run(ctx context.Context) error {
 			reconciler: &reconciler.TrafficSplitReconciler{
 				TrafficSplits: tsclient,
 				ConfigMaps:    cmclient,
-				TsToConfigs: tsToConfigs,
+				TsToConfigs:   tsToConfigs,
 				Namespace:     m.Namespace,
+				Logger:        logger,
 			},
 			resourceNames: m.TrafficSplits,
+			Logger:        logger,
 		}
 
 		// trafficsplits controller needs to be before configmaps controller
@@ -111,7 +121,7 @@ func (m *Manager) Run(ctx context.Context) error {
 		return nil
 	}
 
-	log.Println("Starting crossover...")
+	logger.Infof("Starting crossover...")
 
 	var wg sync.WaitGroup
 
@@ -121,7 +131,7 @@ func (m *Manager) Run(ctx context.Context) error {
 		go func() {
 			defer wg.Done()
 			if err := c.Poll(ctx, m.SyncInterval); err != nil {
-				log.Fatalf("%v", err)
+				m.fatalf("%v", err)
 			}
 		}()
 	}
@@ -133,9 +143,9 @@ func (m *Manager) Run(ctx context.Context) error {
 			go func() {
 				defer wg.Done()
 				if err := c.Watch(ctx); err != nil {
-					log.Fatalf("Watch stopped due to error: %v", err)
+					m.fatalf("Watch stopped due to error: %v", err)
 				}
-				log.Printf("Watch stopped normally.")
+				logger.Infof("Watch stopped normally.")
 			}()
 		}
 	}
@@ -146,15 +156,20 @@ func (m *Manager) Run(ctx context.Context) error {
 		go func() {
 			defer wg.Done()
 			if err := c.Run(ctx); err != nil {
-				log.Fatalf("Run loop stopped due to error: %v", err)
+				m.fatalf("Run loop stopped due to error: %v", err)
 			}
-			log.Printf("Run loop stopped normally.")
+			logger.Infof("Run loop stopped normally.")
 		}()
 	}
 
 	wg.Wait()
 
 	return nil
+}
+
+func (m *Manager) fatalf(f string, args ...interface{}) {
+	m.Errorf(f, args...)
+	os.Exit(1)
 }
 
 func createHttpClient(insecure bool) *http.Client {
