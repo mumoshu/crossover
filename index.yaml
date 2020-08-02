@@ -3,9 +3,9 @@ entries:
   envoy:
   - apiVersion: v1
     appVersion: 1.11.1
-    created: "2019-12-18T13:11:38.41638808Z"
+    created: "2020-08-02T00:46:24.011376098Z"
     description: Envoy with Crossover sidecar
-    digest: 9dc433f6e194426d1dcf6a9114a04e00a4e1a5c1190eb3ccfc8166b00d85c6cb
+    digest: ebc869e3667f8b568ba17a951b4fe315991b3c4956599fecb5753c385a58fe06
     home: https://www.envoyproxy.io/
     icon: https://avatars0.githubusercontent.com/u/30125649
     keywords:
@@ -22,7 +22,7 @@ entries:
     version: 0.1.4
   - apiVersion: v1
     appVersion: 1.11.1
-    created: "2019-12-18T13:11:38.415274499Z"
+    created: "2020-08-02T00:46:24.010181491Z"
     description: Envoy with Crossover sidecar
     digest: dd83ff431cd77e1ca8476dbc52a24a2a60a52d6a4949b3997e8678f1b602c54f
     home: https://www.envoyproxy.io/
@@ -41,7 +41,7 @@ entries:
     version: 0.1.3
   - apiVersion: v1
     appVersion: 1.11.1
-    created: "2019-12-18T13:11:38.414763633Z"
+    created: "2020-08-02T00:46:24.009702136Z"
     description: Envoy with Crossover sidecar
     digest: 67f3c97e911fd9ca4658051bd6970896133904dbbf481c51973653918fb95264
     home: https://www.envoyproxy.io/
@@ -60,7 +60,7 @@ entries:
     version: 0.1.2
   - apiVersion: v1
     appVersion: 1.11.1
-    created: "2019-12-18T13:11:38.414331437Z"
+    created: "2020-08-02T00:46:24.009163913Z"
     description: Envoy with Crossover sidecar
     digest: d4e51572d4bf71996c959953ddc4cbc37fd9ea24d410f89dee37d3fdde55f26e
     home: https://www.envoyproxy.io/
@@ -79,7 +79,7 @@ entries:
     version: 0.1.1
   - apiVersion: v1
     appVersion: 1.11.1
-    created: "2019-12-18T13:11:38.413868337Z"
+    created: "2020-08-02T00:46:24.008698393Z"
     description: Envoy with Crossover sidecar
     digest: 83b92d99474bde4b190fd5fc20a4db4c1d72061dcf009b09536174b2d8380973
     home: https://www.envoyproxy.io/
@@ -96,4 +96,4 @@ entries:
     urls:
     - https://mumoshu.github.io/crossover/envoy-0.1.0.tgz
     version: 0.1.0
-generated: "2019-12-18T13:11:38.413259779Z"
+generated: "2020-08-02T00:46:24.008091967Z"
