@@ -7,10 +7,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"time"
 
+	"github.com/mumoshu/crossover/pkg/log"
 	"github.com/mumoshu/crossover/pkg/types"
 )
 
@@ -32,6 +32,8 @@ type KubeClient struct {
 	// api/v1 for configmaps, apis/split.smi-spec.io/v1alpha2 for trafficsplits
 	GroupVersion string
 	HttpClient   *http.Client
+
+	log.Logger
 }
 
 var _ ReadOnlyClient = &KubeClient{}
@@ -58,7 +60,7 @@ func (tp *KubeClient) Get(namespace, name string, obj interface{}) error {
 	resp.Body.Close()
 
 	if resp.StatusCode == 404 {
-		log.Printf("Get %s/%s: %s", namespace, name, data)
+		tp.Errorf("Get %s/%s: %s", namespace, name, data)
 		return types.ErrNotExist
 	}
 
@@ -87,36 +89,36 @@ WATCHES:
 		go func() {
 			defer close(names)
 
-			log.Printf("Watch starting...")
+			tp.Infof("Watch starting...")
 
 			req, err := http.NewRequest("GET", u, nil)
 			if err != nil {
-				log.Printf("Watch failed: %v", fmt.Errorf("http get request creation: %v", err))
+				tp.Infof("Watch failed: %v", fmt.Errorf("http get request creation: %v", err))
 				return
 			}
 			req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", tp.Token))
 
 			resp, err := client.Do(req)
 			if err != nil {
-				log.Printf("Watch failed: %v", fmt.Errorf("http get: %v", err))
+				tp.Infof("Watch failed: %v", fmt.Errorf("http get: %v", err))
 				return
 			}
 
 			scanner := bufio.NewScanner(resp.Body)
 
 			// Read chunks until error or stop
-			for names != nil  && scanner.Scan() {
-				log.Printf("Watch reading next chunk...")
+			for names != nil && scanner.Scan() {
+				tp.Infof("Watch reading next chunk...")
 				evt := map[string]interface{}{}
 				body := scanner.Bytes()
 				if err := json.Unmarshal(body, &evt); err != nil {
-					log.Printf("Watch failed: %s: parsing %s: %v", u, body, err)
+					tp.Infof("Watch failed: %s: parsing %s: %v", u, body, err)
 					return
 				}
 				names <- name
 			}
 
-			log.Printf("Sent all chunks.")
+			tp.Infof("Sent all chunks.")
 		}()
 
 	CHUNK_READS:
@@ -124,24 +126,24 @@ WATCHES:
 			select {
 			case <-ctx.Done():
 				names = nil
-				log.Printf("Watch cancelled.")
+				tp.Infof("Watch cancelled.")
 				break WATCHES
 			case name, ok := <-names:
 				if !ok {
-					log.Printf("Watch read all chunks.")
+					tp.Infof("Watch read all chunks.")
 					break CHUNK_READS
 				}
-				log.Printf("Enqueing %s", name)
+				tp.Infof("Enqueing %s", name)
 				updated <- name
 			}
 		}
 
 		// Prevent busy loop
-		log.Printf("Watch stopped. Retrying in %s", backoff)
+		tp.Infof("Watch stopped. Retrying in %s", backoff)
 		time.Sleep(backoff)
 	}
 
-	log.Printf("Watch canceled")
+	tp.Infof("Watch canceled")
 
 	return nil
 }
@@ -174,7 +176,7 @@ func (tp *KubeClient) Create(namespace string, obj interface{}) error {
 	resp.Body.Close()
 
 	if resp.StatusCode == 404 {
-		log.Printf("Create %s/%s: %s", namespace, tp.Resource, body)
+		tp.Errorf("Create %s/%s: %s", namespace, tp.Resource, body)
 		return types.ErrNotExist
 	}
 
@@ -213,14 +215,14 @@ func (tp *KubeClient) Replace(namespace, name string, obj interface{}) error {
 	resp.Body.Close()
 
 	if resp.StatusCode == 404 {
-		log.Printf("Replace %s/%s: %s", namespace, tp.Resource, body)
+		tp.Errorf("Replace %s/%s: %s", namespace, tp.Resource, body)
 		return types.ErrNotExist
 	}
 
 	// 409 CONFLICT here mean that another crossover sidecar has successfully updated the resource i.e. the configmap
 	// is already up-to-date, that we don't need to retry it now.
 	if resp.StatusCode == 409 {
-		log.Printf("Replace %s/%s: %s", namespace, tp.Resource, body)
+		tp.Infof("Replace %s/%s: %s", namespace, tp.Resource, body)
 		return nil
 	}
 

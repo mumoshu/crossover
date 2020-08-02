@@ -16,9 +16,7 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"os/signal"
 	"strings"
@@ -27,12 +25,17 @@ import (
 	"time"
 
 	"github.com/mumoshu/crossover/pkg/controller"
+	"github.com/mumoshu/crossover/pkg/log"
 )
 
 func main() {
 	var tokenfile string
 
-	manager := &controller.Manager{}
+	logger := log.StdLogger
+
+	manager := &controller.Manager{
+		Logger: logger,
+	}
 
 	defaultNs := os.Getenv("NS")
 	if defaultNs == "" {
@@ -60,7 +63,8 @@ func main() {
 
 	tokenBytes, err := ioutil.ReadFile(tokenfile)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "reading token: %v\n", err)
+		logger.Errorf("Error: reading token from %s: %v\n", tokenfile, err)
+		os.Exit(1)
 	}
 
 	manager.Token = strings.TrimSpace(string(tokenBytes))
@@ -72,7 +76,7 @@ func main() {
 	wg.Add(1)
 	go func() {
 		if err := manager.Run(ctx); err != nil {
-			log.Printf("Error: %v", err)
+			logger.Errorf("Error: %v", err)
 			os.Exit(1)
 		}
 		wg.Done()
@@ -84,11 +88,11 @@ func main() {
 
 	select {
 	case <-signalChan:
-		log.Printf("Shutdown signal received. Exiting...")
+		logger.Infof("Shutdown signal received. Exiting...")
 		cancel()
 		wg.Wait()
 	case <-ctx.Done():
-		log.Printf("Done writing Envoy configs. Existing...")
+		logger.Infof("Done writing Envoy configs. Existing...")
 	}
 	os.Exit(0)
 }

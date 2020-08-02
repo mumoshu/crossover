@@ -12,4 +12,3 @@ func (s *StringSlice) Set(value string) error {
 	*s = append(*s, value)
 	return nil
 }
-

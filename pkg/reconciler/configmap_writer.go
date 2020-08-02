@@ -2,22 +2,25 @@ package reconciler
 
 import (
 	"fmt"
+	"github.com/mumoshu/crossover/pkg/log"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 )
 
 type writer struct {
 	xdsDir string
+
+	log.Logger
 }
 
-func newWriter(dir string) *writer {
+func newWriter(dir string, logger log.Logger) *writer {
 	if dir == "" {
 		dir = "/srv/runtime"
 	}
 	return &writer{
 		xdsDir: dir,
+		Logger: logger,
 	}
 }
 
@@ -33,19 +36,19 @@ func (rf *writer) write(route ConfigMap) error {
 	}
 
 	id := fmt.Sprintf("%s/%s", route.ObjectMeta.Namespace, route.ObjectMeta.Name)
-	log.Printf("Processing %s", id)
+	rf.Infof("Processing %s", id)
 	if len(route.Data) == 0 {
-		log.Printf("Nothing to write! Configmap %s has no data", route.ObjectMeta.Name)
+		rf.Errorf("Nothing to write! Configmap %s has no data", route.ObjectMeta.Name)
 		return nil
 	}
 	for fn, content := range route.Data {
 		newFile := filepath.Join(newDir, fn)
 		currentFile := filepath.Join(currentDir, fn)
-		log.Printf("Writing file %s", newFile)
+		rf.Infof("Writing file %s", newFile)
 		if err := ioutil.WriteFile(newFile, []byte(content), 0666); err != nil {
 			return err
 		}
-		log.Printf("Moving file to %s", currentFile)
+		rf.Infof("Moving file to %s", currentFile)
 		if err := os.Rename(newFile, currentFile); err != nil {
 			return fmt.Errorf("failed renaming %s to %s: %v", newFile, currentFile, err)
 		}
