@@ -327,3 +327,11 @@ Consul and gRPC server based implementations
 
 - [gojek/consul-envoy-xds](https://github.com/gojek/consul-envoy-xds)
 - [tak2siva/Envoy-Pilot](https://github.com/tak2siva/Envoy-Pilot)
+
+Kubernetes Services and Endpoints with gRPC server based implementations
+
+- [jrockway/ekglue](https://github.com/jrockway/ekglue)
+
+Config file and gRPC server based implementations
+
+- [QubitProducts/iris](https://github.com/QubitProducts/iris)
