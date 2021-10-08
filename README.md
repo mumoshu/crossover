@@ -169,7 +169,7 @@ helm upgrade --install envoy stable/envoy -f example/values.yaml -f example/valu
 Or by using `crossover/envoy` chart:
 
 ```
-helm repo add crossover https://mumoshu.github.com/crossover
+helm repo add crossover https://mumoshu.github.io/crossover
 helm upgrade --install envoy crossover/envoy -f example/values.upstreams.yaml
 ```
 
