@@ -17,10 +17,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"log"
 	"strconv"
 
 	"github.com/mumoshu/crossover/pkg/kubeclient"
+	"github.com/mumoshu/crossover/pkg/log"
 	"github.com/mumoshu/crossover/pkg/types"
 	"gopkg.in/yaml.v3"
 )
@@ -30,6 +30,8 @@ type TrafficSplitReconciler struct {
 	ConfigMaps    kubeclient.Client
 	Namespace     string
 	TsToConfigs   map[string]string
+
+	log.Logger
 }
 
 func (r *TrafficSplitReconciler) Reconcile(name string) error {
@@ -37,10 +39,10 @@ func (r *TrafficSplitReconciler) Reconcile(name string) error {
 	err := r.TrafficSplits.Get(r.Namespace, name, &ts)
 	if err != nil {
 		if err == types.ErrNotExist {
-			log.Printf("Trafficsplit %s/%s not found. Skipping reconcilation. This will be retried soon", r.Namespace, name)
+			r.Infof("Trafficsplit %s/%s not found. Skipping reconcilation. This will be retried soon", r.Namespace, name)
 			return nil
 		}
-		log.Printf("Unexpected error while getting Trafficsplit %s/%s: %v", r.Namespace, name, err)
+		r.Errorf("Unexpected error while getting Trafficsplit %s/%s: %v", r.Namespace, name, err)
 		return err
 	}
 
@@ -50,7 +52,7 @@ func (r *TrafficSplitReconciler) Reconcile(name string) error {
 	if err := enc.Encode(ts.Spec); err != nil {
 		return err
 	}
-	log.Printf("Reconciling trafficsplit %s/%s:\n%s", r.Namespace, name, specYaml.String())
+	r.Infof("Reconciling trafficsplit %s/%s:\n%s", r.Namespace, name, specYaml.String())
 
 	svc := ts.Spec.Service
 
@@ -71,7 +73,7 @@ func (r *TrafficSplitReconciler) Reconcile(name string) error {
 	err = r.ConfigMaps.Get(xdsNs, tplCmName, &tplCm)
 	if err != nil {
 		if err == types.ErrNotExist {
-			log.Printf("Could not find template ConfigMap %q. Please create it: %v", tplCmName, err)
+			r.Errorf("Could not find template ConfigMap %q. Please create it: %v", tplCmName, err)
 			return nil
 		} else {
 			return err
@@ -103,7 +105,7 @@ DATA:
 		enc.SetIndent(2)
 		err := enc.Encode(obj)
 		if err != nil {
-			log.Printf("Skipping SMI merge for %s/%s: %v", xdsNs, cmName, err)
+			r.Infof("Skipping SMI merge for %s/%s: %v", xdsNs, cmName, err)
 			return nil
 		}
 
